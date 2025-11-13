@@ -4,9 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "start": "node server.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -23,7 +21,7 @@
     "socket.io": "^4.8.1"
   },
   "description": "Frontend application สำหรับแสดงสถานะ MQTT Broker แบบ Real-time",
-  "main": "index.html",
+  "main": "server.js",
   "keywords": [],
   "author": "",
   "license": "ISC"
