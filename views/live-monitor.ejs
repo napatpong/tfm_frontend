@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title><%= title %></title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css?v=<%= Date.now() %>">
+    <style>
+        body {
+            background: #1a1a1a;
+            color: #e8e8e8;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .monitor-container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            text-align: center;
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            gap: 20px;
+        }
+
+        .header-section h1 {
+            margin: 0;
+            color: #ffffff;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            background: rgba(255,255,255,0.05);
+            padding: 5px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .view-btn {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            color: #aaa;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .view-btn.active {
+            background: #1976d2;
+            color: white;
+        }
+
+        .view-btn:hover:not(.active) {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .view-btn i {
+            font-size: 1.2rem;
+        }
+
+        .live-table {
+            background: #242424;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            overflow-x: auto;
+            border: 1px solid #333333;
+            display: inline-block;
+            width: auto;
+        }
+
+        .live-table table {
+            width: auto;
+            border-collapse: collapse;
+            min-width: 1400px;
+        }
+
+        .live-table thead {
+            background: #2d2d2d;
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 2px solid #404040;
+        }
+
+        .live-table th {
+            padding: 14px 12px;
+            text-align: center;
+            font-weight: 600;
+            white-space: nowrap;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .live-table th:first-child {
+            text-align: left;
+        }
+
+        .live-table th:last-child {
+            border-right: none;
+        }
+
+        .live-table tbody tr {
+            border-bottom: 1px solid #2d2d2d;
+            transition: all 0.2s ease;
+        }
+
+        /* สีสลับแถวคู่-คี่ */
+        .live-table tbody tr:nth-child(odd) {
+            background: #242424;
+        }
+
+        .live-table tbody tr:nth-child(even) {
+            background: #282828;
+        }
+
+        /* สีสำหรับ Online rows */
+        .live-table tbody tr.online-row:nth-child(odd) {
+            background: #242424;
+            border-left: 3px solid #4caf50;
+        }
+
+        .live-table tbody tr.online-row:nth-child(even) {
+            background: #282828;
+            border-left: 3px solid #4caf50;
+        }
+
+        /* สีสำหรับ Offline rows */
+        .live-table tbody tr.offline-row:nth-child(odd) {
+            background: #242424;
+            border-left: 3px solid #ff9800;
+        }
+
+        .live-table tbody tr.offline-row:nth-child(even) {
+            background: #282828;
+            border-left: 3px solid #ff9800;
+        }
+
+        /* Hover effect */
+        .live-table tbody tr:hover {
+            background: #303030 !important;
+        }
+
+        .live-table td {
+            padding: 12px 10px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            border-right: 1px solid #2d2d2d;
+            color: #e8e8e8;
+            text-align: center;
+        }
+
+        .live-table td:first-child {
+            text-align: left;
+        }
+
+        .live-table td:last-child {
+            border-right: none;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-badge.online {
+            background: #2d5016;
+            color: #81c784;
+            border: 1px solid #4caf50;
+        }
+
+        .status-badge.offline {
+            background: #4a3a1a;
+            color: #ffb74d;
+            border: 1px solid #ff9800;
+        }
+
+        .device-status-icons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .status-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            padding: 2px;
+            border-radius: 6px;
+            transition: transform 0.2s ease;
+            cursor: pointer;
+        }
+
+        .status-icon:hover {
+            transform: scale(1.3);
+        }
+
+        .status-icon .material-icons {
+            font-size: 28px;
+            font-weight: 900;
+        }
+
+        .status-icon i {
+            font-size: 28px;
+            font-weight: 900;
+        }
+
+        .status-icon.compressor-on {
+            background: #2d5016;
+            color: #81c784;
+            border: 1px solid #4caf50;
+        }
+
+        .status-icon.compressor-off {
+            background: #2d2d2d;
+            color: #666666;
+            border: 1px solid #444444;
+        }
+
+        .status-icon.fan-on {
+            background: #1a3a5a;
+            color: #64b5f6;
+            border: 1px solid #2196F3;
+        }
+
+        .status-icon.fan-off {
+            background: #2d2d2d;
+            color: #666666;
+            border: 1px solid #444444;
+        }
+
+        .status-icon.heater-on {
+            background: #5a4a1a;
+            color: #ffb74d;
+            border: 1px solid #ff9800;
+        }
+
+        .status-icon.heater-off {
+            background: #2d2d2d;
+            color: #666666;
+            border: 1px solid #444444;
+        }
+
+        .alarm-icons {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .alarm-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            padding: 2px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            transition: transform 0.2s ease;
+            cursor: pointer;
+        }
+
+        .alarm-icon:hover {
+            transform: scale(1.3);
+        }
+
+        .alarm-icon .material-icons {
+            font-size: 28px;
+            font-weight: 900;
+        }
+
+        .alarm-icon.alarm-normal {
+            background: #2d5016;
+            color: #81c784;
+            border: 1px solid #4caf50;
+        }
+
+        .alarm-icon.alarm-active {
+            background: #5a1a1a;
+            color: #ef5350;
+            border: 1px solid #f44336;
+            animation: pulse 1s infinite;
+        }
+
+        .alarm-icon.alarm-off {
+            background: #2d2d2d;
+            color: #666666;
+            border: 1px solid #444444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .alarm-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .alarm-badge.normal {
+            background: #2d5016;
+            color: #81c784;
+            border: 1px solid #4caf50;
+        }
+
+        .alarm-badge.alarm {
+            background: #5a1a1a;
+            color: #ef5350;
+            border: 1px solid #f44336;
+            animation: pulse 1s infinite;
+        }
+
+        /* Status badge styles */
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-badge.status-online {
+            background: #2d5016;
+            color: #81c784;
+            border: 2px solid #4caf50;
+        }
+
+        .status-badge.status-offline {
+            background: #5a1a1a;
+            color: #ef5350;
+            border: 2px solid #f44336;
+        }
+
+        .status-badge.status-waiting {
+            background: #4a4a2a;
+            color: #ffd54f;
+            border: 2px solid #fbc02d;
+        }
+
+        .mode-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* Mode: Cooling (สีฟ้า) */
+        .mode-badge.mode-cooling {
+            background: #1a3a5a;
+            color: #64b5f6;
+            border: 1px solid #2196F3;
+        }
+
+        /* Mode: Defrost (สีเหลือง) */
+        .mode-badge.mode-defrost {
+            background: #5a4a1a;
+            color: #ffb74d;
+            border: 1px solid #ff9800;
+        }
+
+        /* Mode: Drain (สีม่วง) */
+        .mode-badge.mode-drain {
+            background: #3a1a5a;
+            color: #ba68c8;
+            border: 1px solid #9c27b0;
+        }
+
+        .temp-value {
+            font-weight: 600;
+            color: #90caf9;
+        }
+
+        .current-value {
+            font-weight: 600;
+            color: #81c784;
+        }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #90caf9;
+            text-decoration: none;
+            margin-bottom: 20px;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: #64b5f6;
+        }
+
+        .last-update {
+            font-size: 0.85rem;
+            color: #999999;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state .material-icons {
+            font-size: 64px;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="monitor-container">
+        <a href="/" class="nav-link">
+            <span class="material-icons">arrow_back</span>
+            Back to Home
+        </a>
+
+        <div class="header-section">
+            <h1><%= title %></h1>
+            
+            <div class="view-toggle">
+                <button class="view-btn active" onclick="window.location.href='/live-monitor'">
+                    <i class="material-icons">view_list</i>
+                    Table
+                </button>
+                <button class="view-btn" onclick="window.location.href='/live-monitor-cards'">
+                    <i class="material-icons">dashboard</i>
+                    Tiles
+                </button>
+                <button class="view-btn" onclick="window.location.href='/devices-monitor'">
+                    <i class="material-icons">grid_view</i>
+                    Cards
+                </button>
+            </div>
+        </div>
+
+        <% if (devices && devices.length > 0) { %>
+            <div class="live-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Device Name</th>
+                            <th>Device Status</th>
+                            <th>Alarm</th>
+                            <th>Mode</th>
+                            <th>Room Temp</th>
+                            <th>Coil Temp</th>
+                            <th>Setpoint</th>
+                            <th>Current (A)</th>
+                            <th>Status</th>
+                            <th>Last Update</th>
+                        </tr>
+                    </thead>
+                    <tbody id="liveTableBody">
+                    </tbody>
+                </table>
+            </div>
+        <% } else { %>
+            <div class="empty-state">
+                <span class="material-icons">devices_other</span>
+                <h2>No Devices Found</h2>
+                <p>No devices available for monitoring.</p>
+            </div>
+        <% } %>
+    </div>
+
+    <script>
+        let devices = <%- JSON.stringify(devices) %>;
+        const deviceData = {}; // เก็บข้อมูล realtime
+        let ws = null;
+        let renderTimeout = null;
+        const deviceTimeouts = {}; // เก็บ timeout สำหรับแต่ละ device
+
+
+
+        // Convert hex to signed 16-bit integer
+        function hexToSigned16(hexString) {
+            if (!hexString || hexString === '-') return '-';
+            try {
+                const cleanHex = hexString.replace(/^0x/i, '').slice(-4);
+                let value = parseInt(cleanHex, 16);
+                if (isNaN(value)) return '-';
+                if (value & 0x8000) value = value - 0x10000;
+                return value;
+            } catch (error) {
+                return '-';
+            }
+        }
+
+        // Calculate scaled value
+        function calculateScaledValue(signedValue, scale) {
+            if (signedValue === '-' || signedValue === null || signedValue === undefined) return '-';
+            if (scale === 10) return (signedValue / 10).toFixed(1);
+            return signedValue;
+        }
+
+        // Parse MQTT message (same as debug page)
+        function parseMessage(message) {
+            try {
+                if (!message) return null;
+                
+                // Format: MAC:TYPE:data...
+                const macMatch = message.match(/^([0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}):/i);
+                if (!macMatch) {
+                    return null;
+                }
+                
+                const mac = macMatch[1];
+                const remainingMessage = message.substring(mac.length + 1);
+                const parts = remainingMessage.split(':');
+                
+                if (parts.length >= 1) {
+                    const dataType = parts[0];
+                    
+                    // กรณี DATA:start:end:value1:value2:...
+                    if (dataType === 'DATA' && parts.length >= 3) {
+                        const dataStart = parseInt(parts[1]);
+                        const dataEnd = parseInt(parts[2]);
+                        const dataCount = dataEnd - dataStart + 1;
+                        const dataValues = parts.slice(3, 3 + dataCount);
+                        
+                        return {
+                            mac: mac,
+                            type: 'DATA',
+                            range: `${dataStart}-${dataEnd}`,
+                            data: dataValues.map((value, index) => ({
+                                label: `data${dataStart + index}`,
+                                value: value
+                            }))
+                        };
+                    }
+                    
+                    // กรณี COIL_DATA หรือรูปแบบอื่นๆ
+                    if (parts.length >= 2) {
+                        const values = parts.slice(1);
+                        return {
+                            mac: mac,
+                            type: dataType,
+                            range: values.length > 0 ? values[0] : '0',
+                            data: values.map((value, index) => ({
+                                label: `value${index}`,
+                                value: value
+                            }))
+                        };
+                    }
+                }
+            } catch (error) {
+                console.error('Parse error:', error);
+            }
+            return null;
+        }
+
+        // Natural sort comparison for strings with numbers
+        function naturalCompare(a, b) {
+            const ax = [], bx = [];
+            
+            a.replace(/(\d+)|(\D+)/g, (_, $1, $2) => { ax.push([$1 || Infinity, $2 || ""]) });
+            b.replace(/(\d+)|(\D+)/g, (_, $1, $2) => { bx.push([$1 || Infinity, $2 || ""]) });
+            
+            while(ax.length && bx.length) {
+                const an = ax.shift();
+                const bn = bx.shift();
+                const nn = (an[0] - bn[0]) || an[1].localeCompare(bn[1]);
+                if(nn) return nn;
+            }
+            
+            return ax.length - bx.length;
+        }
+
+        // Sort devices by name using natural sort
+        devices.sort((a, b) => {
+            const nameA = String(a.name || '');
+            const nameB = String(b.name || '');
+            return naturalCompare(nameA.toLowerCase(), nameB.toLowerCase());
+        });
+
+        // Initialize device data
+        devices.forEach(device => {
+            // ใช้ device.id เป็น key สำหรับ device ที่ไม่มี macAddress
+            const deviceKey = device.macAddress || `device_${device.id}`;
+            
+            deviceData[deviceKey] = {
+                name: device.name,
+                status: 'Waiting...',
+                alarm: 'Normal',
+                mode: '-',
+                roomTemp: '-',
+                coilTemp: '-',
+                setpoint: '-',
+                    compCurrent: '-',
+                    rPhaseCurrent: '-',
+                    deviceStatus: '-',
+                    compressor: false,
+                    fan: false,
+                    heater: false,
+                    phaseLoss: false,
+                    overload: false,
+                    lowPressure: false,
+                    highPressure: false,
+                    lastUpdate: '-',
+                    lastUpdateTimestamp: null, // เก็บ timestamp ล่าสุด
+                    hasReceivedData: false, // ตรวจสอบว่าเคยได้รับข้อมูลหรือยัง
+                    rawData: {} // เก็บ raw data ทั้งหมด
+                };
+            
+            // เริ่ม timeout สำหรับ Waiting... (60 วินาที)
+            if (deviceKey && deviceKey.indexOf('device_') === -1) { // ถ้ามี MAC address
+                checkDeviceTimeout(deviceKey);
+            }
+        });
+
+        // ฟังก์ชันตรวจสอบ timeout (60 วินาที)
+        function checkDeviceTimeout(macAddress) {
+            clearTimeout(deviceTimeouts[macAddress]);
+            deviceTimeouts[macAddress] = setTimeout(() => {
+                if (deviceData[macAddress]) {
+                    // ถ้าเคยได้รับข้อมูลแล้ว หรือยังเป็น Waiting...
+                    deviceData[macAddress].status = 'Offline';
+                    renderTable();
+                }
+            }, 60000); // 60 วินาที
+        }
+
+        // Function to render table
+        function renderTable() {
+            const tbody = document.getElementById('liveTableBody');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+
+            devices.forEach(device => {
+                // ใช้ device.id เป็น key สำหรับ device ที่ไม่มี macAddress
+                const deviceKey = device.macAddress || `device_${device.id}`;
+                
+                const data = deviceData[deviceKey] || {};
+                const isOnline = data.status === 'Online';
+                const isWaiting = data.status === 'Waiting...';
+                const rowClass = isOnline ? 'online-row' : 'offline-row';
+                const hasAlarm = data.alarm !== 'Normal';
+                
+                // กำหนด status class
+                let statusClass = 'status-offline';
+                if (isOnline) statusClass = 'status-online';
+                else if (isWaiting) statusClass = 'status-waiting';
+                
+                // กำหนด mode class
+                let modeClass = '';
+                if (data.mode === 'Cooling') modeClass = 'mode-cooling';
+                else if (data.mode === 'Defrost') modeClass = 'mode-defrost';
+                else if (data.mode === 'DRIP') modeClass = 'mode-drain';
+
+                const row = document.createElement('tr');
+                row.className = rowClass;
+                row.innerHTML = `
+                    <td>${data.name || device.name}</td>
+                    <td>
+                        <div class="device-status-icons">
+                            <span class="status-icon ${data.compressor ? 'compressor-on' : 'compressor-off'}" title="Compressor">
+                                <span class="material-icons">settings</span>
+                            </span>
+                            <span class="status-icon ${data.fan ? 'fan-on' : 'fan-off'}" title="Fan">
+                                <i class="fa-solid fa-fan"></i>
+                            </span>
+                            <span class="status-icon ${data.heater ? 'heater-on' : 'heater-off'}" title="Heater">
+                                <span class="material-icons">local_fire_department</span>
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="alarm-icons">
+                            <span class="alarm-icon ${data.phaseLoss ? 'alarm-active' : 'alarm-off'}" title="Phase Loss">
+                                <span class="material-icons">bolt</span>
+                            </span>
+                            <span class="alarm-icon ${data.overload ? 'alarm-active' : 'alarm-off'}" title="Overload">
+                                <span class="material-icons">warning</span>
+                            </span>
+                            <span class="alarm-icon ${data.lowPressure ? 'alarm-active' : 'alarm-off'}" title="Low Pressure">
+                                <span class="material-icons">south</span>
+                            </span>
+                            <span class="alarm-icon ${data.highPressure ? 'alarm-active' : 'alarm-off'}" title="High Pressure">
+                                <span class="material-icons">north</span>
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="mode-badge ${modeClass}">${data.mode}</span>
+                    </td>
+                    <td class="temp-value">${data.roomTemp}</td>
+                    <td class="temp-value">${data.coilTemp}</td>
+                    <td class="temp-value">${data.setpoint}</td>
+                    <td class="current-value" title="Compressor R Phase = ${data.rPhaseCurrent} A&#13;Compressor Y Phase = ${data.yPhaseCurrent} A&#13;Compressor B Phase = ${data.bPhaseCurrent} A">${data.compCurrent}</td>
+                    <td>
+                        <span class="status-badge ${statusClass}">
+                            ${data.status}
+                        </span>
+                    </td>
+                    <td class="last-update">${data.lastUpdate}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Connect to backend WebSocket
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:2052');
+
+            ws.onopen = () => {
+                // mqttManager auto-subscribes to all device topics
+                // No need to manually subscribe
+                
+                // Initial render
+                renderTable();
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.type === 'mqtt_message' && data.data) {
+                        const topic = data.data.topic;
+                        const macAddress = topic.replace('bifrost_pub_', '');
+                        
+                        if (deviceData[macAddress]) {
+                            // Parse message string (ไม่ใช่ JSON.parse)
+                            const parsedMessage = parseMessage(data.data.message);
+                            
+                            if (!parsedMessage || parsedMessage.type !== 'DATA') {
+                                return;
+                            }
+                            
+                            // แปลง parsedMessage.data array และรวมกับ rawData เดิม
+                            parsedMessage.data.forEach(item => {
+                                const idx = parseInt(item.label.replace('data', ''));
+                                deviceData[macAddress].rawData[idx] = item.value;
+                            });
+                            
+                            // ใช้ rawData ที่รวมแล้ว
+                            const messageData = deviceData[macAddress].rawData;
+                            
+                            // Update device data - ใช้การแปลงค่าเหมือนหน้า debug
+                            const parseHexValue = (hexValue, scale = 10) => {
+                                const signedValue = hexToSigned16(hexValue);
+                                const scaledValue = calculateScaledValue(signedValue, scale);
+                                return scaledValue !== '-' ? scaledValue : '-';
+                            };
+
+                            const getRoomTemp = () => {
+                                // Parameter 0: Room temp
+                                const hexValue = messageData[0];
+                                if (hexValue) {
+                                    const value = parseHexValue(hexValue, 10);
+                                    return value !== '-' ? `${value} °C` : '-';
+                                }
+                                return '-';
+                            };
+
+                            const getCoilTemp = () => {
+                                // Parameter 1: Coil temp
+                                const hexValue = messageData[1];
+                                if (hexValue) {
+                                    const value = parseHexValue(hexValue, 10);
+                                    return value !== '-' ? `${value} °C` : '-';
+                                }
+                                return '-';
+                            };
+
+                            const getSetpoint = () => {
+                                // Parameter 60: Setpoint
+                                const hexValue = messageData[60];
+                                if (hexValue) {
+                                    const value = parseHexValue(hexValue, 10);
+                                    return value !== '-' ? `${value} °C` : '-';
+                                }
+                                return '-';
+                            };
+
+                            const getCompCurrent = () => {
+                                // Parameter 7: Comp R Phase CT
+                                const hexValue = messageData[7];
+                                if (hexValue) {
+                                    const value = parseHexValue(hexValue, 10);
+                                    return value !== '-' ? `${value} A` : '-';
+                                }
+                                return '-';
+                            };
+
+                            const getRPhaseCurrent = () => {
+                                // Parameter 7: Comp R Phase CT
+                                const hexValue = messageData[7];
+                                if (hexValue) {
+                                    const value = parseHexValue(hexValue, 10);
+                                    return value !== '-' ? value : '-';
+                                }
+                                return '-';
+                            };
+
+                            const getYPhaseCurrent = () => {
+                                // Parameter 8: Comp Y Phase CT
+                                const hexValue = messageData[8];
+                                if (hexValue) {
+                                    const value = parseHexValue(hexValue, 10);
+                                    return value !== '-' ? value : '-';
+                                }
+                                return '-';
+                            };
+
+                            const getBPhaseCurrent = () => {
+                                // Parameter 9: Comp B Phase CT
+                                const hexValue = messageData[9];
+                                if (hexValue) {
+                                    const value = parseHexValue(hexValue, 10);
+                                    return value !== '-' ? value : '-';
+                                }
+                                return '-';
+                            };
+
+                            const getMode = () => {
+                                // Parameter 5: System Status (0 = Cooling, 1 = Defrost, 2 = DRIP)
+                                const hexValue = messageData[5];
+                                if (hexValue) {
+                                    const value = parseInt(hexValue, 16);
+                                    if (value === 0) return 'Cooling';
+                                    if (value === 1) return 'Defrost';
+                                    if (value === 2) return 'DRIP';
+                                    return '-';
+                                }
+                                return '-';
+                            };
+
+                            // Parse Relay Status (Parameter 2)
+                            const getRelayStatus = () => {
+                                const hexValue = messageData[2];
+                                if (hexValue) {
+                                    const value = parseInt(hexValue, 16);
+                                    return {
+                                        heater: (value & 0x10) !== 0  // bit 4 = Heater
+                                    };
+                                }
+                                return { heater: false };
+                            };
+
+                            const relayStatus = getRelayStatus();
+
+                            deviceData[macAddress] = {
+                                ...deviceData[macAddress],
+                                status: 'Online',
+                                alarm: 'Normal', // TODO: parse from messageData
+                                mode: getMode(),
+                                roomTemp: getRoomTemp(),
+                                coilTemp: getCoilTemp(),
+                                setpoint: getSetpoint(),
+                                compCurrent: getCompCurrent(),
+                                rPhaseCurrent: getRPhaseCurrent(),
+                                yPhaseCurrent: getYPhaseCurrent(),
+                                bPhaseCurrent: getBPhaseCurrent(),
+                                deviceStatus: '-', // TODO: parse from messageData
+                                compressor: false, // TODO: parse from messageData[2] (Relay Status)
+                                fan: false, // TODO: parse from messageData[2]
+                                heater: relayStatus.heater,
+                                phaseLoss: false, // TODO: parse from messageData[3] (Fault Status)
+                                overload: false, // TODO: parse from messageData[3]
+                                lowPressure: false, // TODO: parse from messageData[3]
+                                highPressure: false, // TODO: parse from messageData[3]
+                                lastUpdate: new Date().toLocaleString('th-TH'),
+                                lastUpdateTimestamp: Date.now(),
+                                hasReceivedData: true
+                            };
+
+                            // ตั้ง timeout 60 วินาที สำหรับ device นี้
+                            checkDeviceTimeout(macAddress);
+
+                            // Update UI with debounce (200ms)
+                            clearTimeout(renderTimeout);
+                            renderTimeout = setTimeout(() => {
+                                renderTable();
+                            }, 200);
+                        }
+                    }
+                } catch (error) {
+                    console.error('❌ Error parsing message:', error);
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error('❌ WebSocket error:', error);
+            };
+
+            ws.onclose = () => {
+                // Mark all devices as offline
+                Object.keys(deviceData).forEach(mac => {
+                    deviceData[mac].status = 'Offline';
+                });
+                renderTable();
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+
+        // Check device timeout (60 seconds)
+        setInterval(() => {
+            const now = Date.now();
+            const timeout = 60000;
+
+            Object.keys(deviceData).forEach(mac => {
+                const lastUpdateTime = new Date(deviceData[mac].lastUpdate).getTime();
+                if (deviceData[mac].status === 'Online' && (now - lastUpdateTime) > timeout) {
+                    deviceData[mac].status = 'Offline';
+                }
+            });
+
+            renderTable();
+        }, 5000);
+
+        // Initial render
+        renderTable();
+        connectWebSocket();
+    </script>
+</body>
+</html>

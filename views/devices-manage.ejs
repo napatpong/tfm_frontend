@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .manage-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header-section h1 {
+            margin: 0;
+            color: #333;
+        }
+
+        .btn-add {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: #1976d2;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .btn-add:hover {
+            background: #1565c0;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .message.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #4caf50;
+        }
+
+        .message.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #f44336;
+        }
+
+        .devices-table {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #1976d2;
+            color: white;
+        }
+
+        th {
+            padding: 8px 12px;
+            text-align: left;
+            font-weight: 500;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        th:hover {
+            background: #1565c0;
+        }
+
+        th.sortable::after {
+            content: '⇅';
+            margin-left: 8px;
+            opacity: 0.5;
+            font-size: 0.9rem;
+        }
+
+        th.sort-asc::after {
+            content: '↑';
+            opacity: 1;
+        }
+
+        th.sort-desc::after {
+            content: '↓';
+            opacity: 1;
+        }
+
+        td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #f5f5f5;
+        }
+
+        tbody tr.offline-row {
+            background: #ffebee !important;
+        }
+
+        tbody tr.offline-row:hover {
+            background: #ffcdd2 !important;
+        }
+
+        tbody tr.online-row:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        tbody tr.online-row:nth-child(odd) {
+            background: white;
+        }
+
+        tbody tr.online-row:hover {
+            background: #e8f5e9 !important;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-edit,
+        .btn-delete {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            color: white;
+        }
+
+        .btn-edit {
+            background: #ff9800;
+        }
+
+        .btn-edit:hover {
+            background: #f57c00;
+        }
+
+        .btn-delete {
+            background: #f44336;
+        }
+
+        .btn-delete:hover {
+            background: #d32f2f;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.875rem;
+            font-weight: bold;
+        }
+
+        .status-badge.online {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-badge.offline {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state .material-icons {
+            font-size: 64px;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #1976d2;
+            text-decoration: none;
+            margin-bottom: 20px;
+        }
+
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="manage-container">
+        <a href="/" class="nav-link">
+            <span class="material-icons">arrow_back</span>
+            Back to Home
+        </a>
+
+        <div class="header-section">
+            <h1>Manage Devices</h1>
+            <a href="/manage/devices/add" class="btn-add">
+                <span class="material-icons">add</span>
+                Add New Device
+            </a>
+        </div>
+
+        <% if (typeof message !== 'undefined' && message) { %>
+            <div class="message <%= message.includes('success') ? 'success' : 'error' %>">
+                <%= message %>
+            </div>
+        <% } %>
+
+        <% if (devices && devices.length > 0) { %>
+            <div class="devices-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-column="name" data-type="string">Name</th>
+                            <th class="sortable" data-column="status" data-type="string">Status</th>
+                            <th class="sortable" data-column="location" data-type="string">Location</th>
+                            <th class="sortable" data-column="updatedAt" data-type="date">Last Update</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="deviceTableBody">
+                    </tbody>
+                </table>
+            </div>
+        <% } else { %>
+            <div class="empty-state">
+                <span class="material-icons">devices_other</span>
+                <h2>No Devices Found</h2>
+                <p>Click "Add New Device" to create your first device.</p>
+            </div>
+        <% } %>
+    </div>
+
+    <script>
+        const devices = <%- JSON.stringify(devices) %>;
+        const lastMessageTime = {}; // เก็บเวลาที่ได้รับข้อความล่าสุด
+        let ws = null;
+        let statusCheckInterval = null;
+        let currentSortColumn = 'name'; // Default sort by name
+        let currentSortDirection = 'asc';
+        let sortedDevices = [...devices];
+
+        // Initialize last message time
+        devices.forEach(device => {
+            if (device.macAddress) {
+                lastMessageTime[device.macAddress] = null;
+            }
+        });
+
+        // Natural sort comparison for strings with numbers
+        function naturalCompare(a, b) {
+            const ax = [], bx = [];
+            
+            a.replace(/(\d+)|(\D+)/g, (_, $1, $2) => { ax.push([$1 || Infinity, $2 || ""]) });
+            b.replace(/(\d+)|(\D+)/g, (_, $1, $2) => { bx.push([$1 || Infinity, $2 || ""]) });
+            
+            while(ax.length && bx.length) {
+                const an = ax.shift();
+                const bn = bx.shift();
+                const nn = (an[0] - bn[0]) || an[1].localeCompare(bn[1]);
+                if(nn) return nn;
+            }
+            
+            return ax.length - bx.length;
+        }
+
+        // Initial sort by name using natural sort
+        sortedDevices.sort((a, b) => {
+            const valueA = String(a.name || '');
+            const valueB = String(b.name || '');
+            return naturalCompare(valueA.toLowerCase(), valueB.toLowerCase());
+        });
+
+        // Function to render table rows
+        function renderTable() {
+            const tbody = document.getElementById('deviceTableBody');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+
+            sortedDevices.forEach(device => {
+                // Get current status (Online/Offline based on last message time)
+                const now = Date.now();
+                const timeout = 60000; // 60 seconds
+                const lastTime = lastMessageTime[device.macAddress];
+                const isOnline = device.macAddress && lastTime && (now - lastTime) < timeout;
+                const statusText = isOnline ? 'Online' : 'Offline';
+                const statusClass = isOnline ? 'online' : 'offline';
+                const rowClass = isOnline ? 'online-row' : 'offline-row';
+
+                const row = document.createElement('tr');
+                row.className = rowClass;
+
+                row.innerHTML = `
+                    <td>${device.name}</td>
+                    <td>
+                        <span class="status-badge ${statusClass}" id="status-${device.id}">
+                            ${statusText}
+                        </span>
+                    </td>
+                    <td>${device.location || '-'}</td>
+                    <td>${new Date(device.updatedAt).toLocaleString('th-TH')}</td>
+                    <td>
+                        <div class="actions">
+                            <a href="/manage/devices/edit/${device.id}" class="btn-edit">
+                                <span class="material-icons" style="font-size: 16px;">edit</span>
+                                Edit
+                            </a>
+                            <form action="/manage/devices/delete/${device.id}" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this device?');">
+                                <button type="submit" class="btn-delete">
+                                    <span class="material-icons" style="font-size: 16px;">delete</span>
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Function to sort table
+        function sortTable(column, type) {
+            if (currentSortColumn === column) {
+                // Toggle direction
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                // New column, default to ascending
+                currentSortColumn = column;
+                currentSortDirection = 'asc';
+            }
+
+            // Update header indicators
+            document.querySelectorAll('th.sortable').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+
+            const currentHeader = document.querySelector(`th[data-column="${column}"]`);
+            if (currentHeader) {
+                currentHeader.classList.add(currentSortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+            }
+
+            // Sort the data
+            sortedDevices.sort((a, b) => {
+                let valueA, valueB;
+
+                // Special handling for status column
+                if (column === 'status') {
+                    const now = Date.now();
+                    const timeout = 60000;
+                    const lastTimeA = lastMessageTime[a.macAddress];
+                    const lastTimeB = lastMessageTime[b.macAddress];
+                    const isOnlineA = a.macAddress && lastTimeA && (now - lastTimeA) < timeout;
+                    const isOnlineB = b.macAddress && lastTimeB && (now - lastTimeB) < timeout;
+                    valueA = isOnlineA ? 'Online' : 'Offline';
+                    valueB = isOnlineB ? 'Online' : 'Offline';
+                } else if (column === 'broker') {
+                    // Special handling for broker column
+                    valueA = a.broker ? a.broker.name : '';
+                    valueB = b.broker ? b.broker.name : '';
+                } else {
+                    valueA = a[column];
+                    valueB = b[column];
+                }
+
+                // Convert based on type
+                let compareResult = 0;
+                
+                if (type === 'number') {
+                    // Ensure proper number conversion
+                    valueA = (valueA === null || valueA === undefined || valueA === '') ? 0 : Number(valueA);
+                    valueB = (valueB === null || valueB === undefined || valueB === '') ? 0 : Number(valueB);
+                    compareResult = valueA - valueB;
+                } else if (type === 'date') {
+                    valueA = new Date(valueA).getTime();
+                    valueB = new Date(valueB).getTime();
+                    compareResult = valueA - valueB;
+                } else if (type === 'string') {
+                    // Handle null/undefined for strings
+                    valueA = (valueA === null || valueA === undefined) ? '' : String(valueA);
+                    valueB = (valueB === null || valueB === undefined) ? '' : String(valueB);
+                    // Use natural sort for strings (handles numbers within strings)
+                    compareResult = naturalCompare(valueA.toLowerCase(), valueB.toLowerCase());
+                }
+
+                // Return based on sort direction
+                return currentSortDirection === 'asc' ? compareResult : -compareResult;
+            });
+
+            renderTable();
+        }
+
+        // Add click event listeners to sortable headers
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('th.sortable').forEach(th => {
+                th.addEventListener('click', () => {
+                    const column = th.dataset.column;
+                    const type = th.dataset.type;
+                    sortTable(column, type);
+                });
+            });
+
+            // Set initial sort indicator on Name column
+            const nameHeader = document.querySelector('th[data-column="name"]');
+            if (nameHeader) {
+                nameHeader.classList.add('sort-asc');
+            }
+
+            // Initial render
+            renderTable();
+        });
+
+        // Function to update device status
+        function updateDeviceStatus(deviceId, isOnline) {
+            const statusBadge = document.getElementById(`status-${deviceId}`);
+            if (statusBadge) {
+                const row = statusBadge.closest('tr');
+                
+                if (isOnline) {
+                    statusBadge.textContent = 'Online';
+                    statusBadge.className = 'status-badge online';
+                    if (row) {
+                        row.classList.remove('offline-row');
+                        row.classList.add('online-row');
+                    }
+                } else {
+                    statusBadge.textContent = 'Offline';
+                    statusBadge.className = 'status-badge offline';
+                    if (row) {
+                        row.classList.remove('online-row');
+                        row.classList.add('offline-row');
+                    }
+                }
+            }
+        }
+
+        // Function to check all device statuses
+        function checkDeviceStatuses() {
+            const now = Date.now();
+            const timeout = 60000; // 60 seconds
+
+            devices.forEach(device => {
+                if (!device.macAddress) {
+                    // No MAC address, always offline
+                    updateDeviceStatus(device.id, false);
+                    return;
+                }
+
+                const lastTime = lastMessageTime[device.macAddress];
+                if (lastTime && (now - lastTime) < timeout) {
+                    updateDeviceStatus(device.id, true);
+                } else {
+                    updateDeviceStatus(device.id, false);
+                }
+            });
+        }
+
+        // Connect to backend WebSocket
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:2052');
+
+            ws.onopen = () => {
+                console.log('Connected to backend WebSocket');
+                // mqttManager auto-subscribes to all device topics
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    // Handle MQTT messages
+                    if (data.type === 'mqtt_message' && data.data) {
+                        const { topic } = data.data;
+                        
+                        // Extract MAC address from topic (bifrost_pub_MAC)
+                        const macAddress = topic.replace('bifrost_pub_', '');
+                        
+                        // Find device by MAC address
+                        const device = devices.find(d => d.macAddress === macAddress);
+                        if (!device) return;
+
+                        // Update last message time
+                        lastMessageTime[macAddress] = Date.now();
+
+                        // Update device status to online
+                        updateDeviceStatus(device.id, true);
+                    }
+                } catch (error) {
+                    console.error('Error parsing message:', error);
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket disconnected');
+                
+                // Reconnect after 3 seconds
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+
+        // Initialize connection
+        connectWebSocket();
+
+        // Start status check interval (check every 5 seconds)
+        statusCheckInterval = setInterval(checkDeviceStatuses, 5000);
+
+        // Initial status check
+        checkDeviceStatuses();
+    </script>
+</body>
+</html>

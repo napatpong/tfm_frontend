@@ -1,0 +1,2834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data History - SealCool Monitor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background: #1a1a1a;
+        }
+
+        body {
+            color: #e8e8e8;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .history-container:has(#tempChartContainer.active),
+        .history-container:has(#currentChartContainer.active) {
+            width: 100%;
+        }
+
+        #tableViewContainer:not(.hidden) ~ #chartsViewContainer {
+            display: none;
+        }
+
+        .data-table-container:has(#chartsViewContainer .chart-container.active) {
+            width: 100%;
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            gap: 20px;
+            flex-wrap: nowrap;
+            box-sizing: border-box;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: nowrap;
+            flex: 1;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-left: auto;
+        }
+
+        .header-section h1 {
+            margin: 0;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-section h1 .material-icons {
+            font-size: 1.8rem;
+            color: #2196f3;
+        }
+
+        .header-device-select {
+            min-width: fit-content;
+        }
+
+        .header-device-select select,
+        .header-device-select input {
+            width: auto;
+            padding: 8px 27px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.08));
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .header-device-select select:focus,
+        .header-device-select input:focus {
+            outline: none;
+            border-color: #2196f3;
+            background: linear-gradient(135deg, rgba(33, 150, 243, 0.15), rgba(33, 150, 243, 0.1));
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .header-device-select select:hover,
+        .header-device-select input:hover {
+            border-color: rgba(255,255,255,0.35);
+        }
+
+        .header-device-select select option {
+            background: #1a1a2e;
+            color: white;
+            padding: 8px;
+        }
+
+        .header-device-select input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+
+        .back-button {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.1));
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .back-button:hover {
+            background: linear-gradient(135deg, rgba(255,255,255,0.25), rgba(255,255,255,0.15));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .back-button .material-icons {
+            font-size: 1.2rem;
+        }
+
+        .filter-section {
+            background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.05));
+            padding: 20px 25px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .filter-controls {
+            display: grid;
+            grid-template-columns: 1.5fr auto;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            color: #b0b0b0;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .form-group label .material-icons {
+            font-size: 1rem;
+            color: #2196f3;
+        }
+
+        .form-group select,
+        .form-group input {
+            padding: 10px 14px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.08));
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: #2196f3;
+            background: linear-gradient(135deg, rgba(33, 150, 243, 0.15), rgba(33, 150, 243, 0.1));
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .form-group select:hover,
+        .form-group input:hover {
+            border-color: rgba(255,255,255,0.35);
+        }
+
+        .form-group select option {
+            background: #1a1a1e;
+            color: white;
+            padding: 8px;
+        }
+
+        .form-group input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+
+        .load-button {
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #1976d2, #2196f3);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(25, 118, 210, 0.3);
+            letter-spacing: 0.3px;
+        }
+
+        .load-button .material-icons {
+            font-size: 1.2rem;
+        }
+
+        .load-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(25, 118, 210, 0.5);
+            background: linear-gradient(135deg, #2196f3, #42a5f5);
+        }
+
+        .load-button:active {
+            transform: translateY(0);
+        }
+
+        .load-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .data-table-container {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        .table-header {
+            padding: 12px 15px;
+            background: rgba(33, 150, 243, 0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .table-header h2 {
+            margin: 0;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .table-info {
+            color: #aaa;
+            font-size: 0.85rem;
+        }
+
+        .view-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .view-btn {
+            padding: 10px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+        }
+
+        .view-btn:hover {
+            background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.15));
+            border-color: rgba(255,255,255,0.35);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255,255,255,0.1);
+        }
+
+        .view-btn.active {
+            background: linear-gradient(135deg, #1976d2, #2196f3);
+            border-color: #2196f3;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
+        }
+
+        .view-btn .material-icons {
+            font-size: 28px;
+        }
+
+        .chart-container {
+            display: none;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            margin: 15px auto;
+            order: 2;
+            width: fit-content;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
+            min-height: auto;
+            padding: 0;
+        }
+
+        .chart-container.active {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .chart-container.first {
+            order: 1;
+        }
+
+        #chartsViewContainer {
+            display: flex;
+            flex-direction: column;
+            border-radius: 0 0 12px 12px;
+            overflow: hidden;
+        }
+
+        .chart-header {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .chart-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-self: start;
+        }
+        
+        .chart-title {
+            justify-self: center;
+        }
+        
+        .chart-actions {
+            justify-self: end;
+        }
+
+        .time-range-group {
+            display: flex;
+            gap: 5px;
+        }
+
+        .time-range-btn {
+            padding: 4px 12px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: #e8e8e8;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+
+        .time-range-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .time-range-btn.active {
+            background: #1976d2;
+            border-color: #1976d2;
+            color: white;
+        }
+
+        .time-period-dropdown {
+            padding: 6px 12px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: #e8e8e8;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            outline: none;
+            margin-left: 10px;
+            min-width: 150px;
+        }
+
+        .time-period-dropdown option {
+            background: #1a1a1a;
+            color: #e8e8e8;
+        }
+
+        .time-period-dropdown:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .chart-title {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #e8e8e8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chart-action-btn {
+            padding: 4px 8px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: #e8e8e8;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.3s;
+        }
+
+        .chart-action-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Export Modal */
+        .export-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+        }
+
+        .export-modal-content {
+            background-color: #2d2d2d;
+            margin: 10% auto;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            width: 500px;
+            max-width: 95%;
+            color: #e8e8e8;
+        }
+
+        .export-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .export-modal-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+            color: #e8e8e8;
+        }
+
+        .export-modal-close {
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .export-modal-close:hover {
+            color: #fff;
+        }
+
+        .export-form-group {
+            margin-bottom: 20px;
+        }
+
+        .export-form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #e8e8e8;
+        }
+
+        .export-datetime-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: #e8e8e8;
+            border-radius: 4px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        .export-datetime-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            background: rgba(255,255,255,0.15);
+        }
+
+        .export-modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+
+        .export-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .export-btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .export-btn-primary:hover {
+            background: #45a049;
+        }
+
+        .export-btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #e8e8e8;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .export-btn-secondary:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .export-datetime-input::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 220px;
+            width: 100%;
+            overflow: hidden;
+            padding: 0 15px 15px 15px;
+            box-sizing: border-box;
+            transition: height 0.3s ease;
+        }
+
+        .chart-wrapper canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .chart-no-data {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .chart-no-data .material-icons {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .chart-no-data p {
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .data-table {
+            width: auto;
+            border-collapse: collapse;
+            table-layout: auto;
+            margin: 0 auto;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            display: flex;
+            justify-content: center;
+        }
+
+        #tableViewContainer {
+            display: block;
+        }
+
+        #tableViewContainer.hidden {
+            display: none;
+        }
+
+        .data-table thead {
+            background: rgba(0,0,0,0.5);
+        }
+
+        .data-table th {
+            padding: 8px 12px;
+            text-align: center;
+            color: #1976d2;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(25, 118, 210, 0.5);
+            white-space: nowrap;
+            font-size: 0.85rem;
+        }
+
+        .data-table td {
+            padding: 6px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: #e8e8e8;
+            font-size: 0.85rem;
+            line-height: 1.3;
+            text-align: center;
+        }
+
+        .data-table tbody tr {
+            transition: background 0.2s ease;
+        }
+
+        .data-table tbody tr:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .temp-value {
+            font-weight: 600;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .temp-cold {
+            color: #4fc3f7;
+        }
+
+        .temp-normal {
+            color: #81c784;
+        }
+
+        .temp-warm {
+            color: #ffb74d;
+        }
+
+        .status-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .status-icon.off {
+            color: #757575;
+        }
+
+        .status-icon.on {
+            color: #4caf50;
+        }
+
+        .status-icon.heater-on {
+            color: #ffc107;
+        }
+
+        .alarm-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .alarm-icon.alarm-active {
+            color: #f44336;
+        }
+
+        .alarm-icon.alarm-lp {
+            color: #ffc107;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px 20px;
+            color: #888;
+        }
+
+        .no-data .material-icons {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #1976d2;
+        }
+
+        .loading .material-icons {
+            font-size: 48px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .filter-controls {
+                grid-template-columns: 1fr;
+            }
+
+            .data-table {
+                font-size: 0.85rem;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 10px 12px;
+            }
+        }
+
+        /* Pagination Styles */
+        .pagination-container {
+            background: rgba(0,0,0,0.3);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .pagination-info {
+            color: #aaa;
+            font-size: 0.8rem;
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .page-size-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: #b0b0b0;
+        }
+
+        .page-size-selector select {
+            padding: 6px 12px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.08));
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .page-size-selector select:hover {
+            border-color: #2196f3;
+            background: linear-gradient(135deg, rgba(33, 150, 243, 0.15), rgba(33, 150, 243, 0.1));
+        }
+
+        .page-size-selector select:focus {
+            outline: none;
+            border-color: #2196f3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.15);
+        }
+
+        .page-size-selector select option {
+            background: #1a1a2e;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .page-btn {
+            padding: 6px 10px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.08));
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .page-btn .material-icons {
+            font-size: 18px;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #2196f3, #42a5f5);
+            border-color: #2196f3;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(33, 150, 243, 0.4);
+        }
+
+        .page-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .page-btn:disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+        }
+
+        .page-btn.active {
+            background: linear-gradient(135deg, #1976d2, #2196f3);
+            border-color: #1976d2;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.4);
+        }
+
+        .page-number {
+            min-width: 40px;
+            text-align: center;
+            padding: 6px 12px;
+            background: linear-gradient(135deg, rgba(33, 150, 243, 0.2), rgba(33, 150, 243, 0.15));
+            border: 1px solid rgba(33, 150, 243, 0.4);
+            border-radius: 6px;
+            color: #2196f3;
+            font-weight: 700;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+        }
+        /* Layout with Sidebar */
+        body {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-nav {
+            width: 250px;
+            background: rgba(45, 45, 45, 0.7);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+
+        .nav-header {
+            padding: 0;
+            background: none;
+            border-bottom: none;
+        }
+
+        .nav-header .logo {
+            width: 100%;
+            height: 120px;
+            background: none;
+            box-shadow: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-header .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            margin: 0;
+        }
+
+        .nav-header h1 {
+            color: #e0e0e0;
+            text-align: center;
+            font-size: 1.2rem;
+            margin: 0;
+        }
+
+        .connection-status {
+            background: rgba(36, 36, 36, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+        }
+
+        .status-label {
+            color: #a0a0a0;
+        }
+
+        .status-value {
+            color: #e0e0e0;
+        }
+
+        .status-value.connected {
+            color: #4caf50;
+        }
+
+        .status-value.disconnected {
+            color: #f44336;
+        }
+
+        .nav-button {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid transparent;
+            color: #e0e0e0;
+            text-decoration: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .nav-button:nth-child(1) .material-icons {
+            color: #64b5f6;
+        }
+
+        .nav-button:nth-child(2) .material-icons {
+            color: #81c784;
+        }
+
+        .nav-button:nth-child(3) .material-icons {
+            color: #ffb74d;
+        }
+
+        .nav-button:nth-child(4) .material-icons {
+            color: #ff8a65;
+        }
+
+        .nav-button:nth-child(5) .material-icons {
+            color: #ba68c8;
+        }
+
+        .nav-button:nth-child(6) .material-icons {
+            color: #4dd0e1;
+        }
+
+        .nav-button:nth-child(7) .material-icons {
+            color: #f06292;
+        }
+
+        .nav-button.active {
+            background: linear-gradient(90deg, #2196f3 0%, #1976d2 100%);
+            color: #fff;
+            border-color: #2196f3;
+            box-shadow: 0 2px 8px rgba(33,150,243,0.15);
+            font-weight: 600;
+            transform: none;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .history-container {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <nav class="app-nav">
+        <div class="nav-header" style="padding: 0; background: none; border-bottom: none;">
+            <div class="logo" style="width: 100%; height: 120px; background: none; box-shadow: none; display: flex; align-items: center; justify-content: center;">
+                <img src="/img/Logo_SealCool_approve-03_0.png" alt="SealCool Logo" style="width: 100%; height: 100%; object-fit: contain; display: block; margin: 0;" />
+            </div>
+        </div>
+        <div class="nav-content">
+            <div class="connection-status">
+                <div class="status-item">
+                    <span class="status-label">Backend:</span>
+                    <span id="backendStatus" class="status-value connected">Connected</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">MQTT:</span>
+                    <span id="mqttStatus" class="status-value connected">Connected</span>
+                </div>
+            </div>
+            <div class="nav-buttons">
+                <a href="/" class="nav-button <%= activePath === '/' ? 'active' : '' %>">
+                    <span class="material-icons">home</span>
+                    Home
+                </a>
+                <a href="/live-monitor" class="nav-button <%= activePath === '/live-monitor' ? 'active' : '' %>">
+                    <span class="material-icons">table_rows</span>
+                    Live Monitor (Table)
+                </a>
+                <a href="/live-monitor-cards" class="nav-button <%= activePath === '/live-monitor-cards' ? 'active' : '' %>">
+                    <span class="material-icons">grid_view</span>
+                    Live Monitor (Cards)
+                </a>
+                <a href="/manage/devices" class="nav-button <%= activePath === '/manage/devices' ? 'active' : '' %>">
+                    <span class="material-icons">edit</span>
+                    Manage Devices
+                </a>
+                <a href="/manage/brokers" class="nav-button <%= activePath === '/manage/brokers' ? 'active' : '' %>">
+                    <span class="material-icons">router</span>
+                    Manage Brokers
+                </a>
+                <a href="/mqtt-debug" class="nav-button <%= activePath === '/mqtt-debug' ? 'active' : '' %>">
+                    <span class="material-icons">bug_report</span>
+                    MQTT Debug
+                </a>
+                <a href="/data-history" class="nav-button <%= activePath === '/data-history' ? 'active' : '' %>">
+                    <span class="material-icons">history</span>
+                    Data History
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <div class="history-container" id="dataHistoryView">
+
+        <div class="data-table-container">
+            <div class="table-header">
+                <div>
+                    <h2 style="margin: 0; font-weight: 700; display: flex; align-items: center; gap: 10px; font-size: 1.8rem;">
+                        <span class="material-icons" style="font-size: 2.2rem; color: #2196f3;">history</span>
+                        Data History
+                    </h2>
+                    <div style="font-size: 0.9rem; color: rgba(255,255,255,0.5); margin-top: 4px;">Historical data charts and analysis</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div class="form-group" style="margin: 0;">
+                            <label style="margin: 0; color: #b0b0b0; font-size: 0.75rem;">
+                                <span class="material-icons" style="font-size: 1rem; color: #2196f3;">devices</span>
+                                Device
+                            </label>
+                            <select id="deviceSelect" onchange="loadData()" style="padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: white; font-size: 0.85rem; cursor: pointer; min-width: 150px;">
+                                <option value="">Select device</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label style="margin: 0; color: #b0b0b0; font-size: 0.75rem;">
+                                <span class="material-icons" style="font-size: 1rem; color: #2196f3;">date_range</span>
+                                Date
+                            </label>
+                            <input type="date" id="dateInput" value="<%= new Date().toISOString().split('T')[0] %>" onchange="loadData()" style="padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: white; font-size: 0.85rem; cursor: pointer; min-width: 150px;" />
+                        </div>
+                    </div>
+                    <div class="view-buttons">
+                        <button class="view-btn" data-view="table" onclick="changeView('table')" title="Table View">
+                            <span class="material-icons">table_chart</span>
+                        </button>
+                        <button class="view-btn" data-view="temp" onclick="changeView('temp')" title="Temperature Chart">
+                            <span class="material-icons">thermostat</span>
+                        </button>
+                        <button class="view-btn" data-view="current" onclick="changeView('current')" title="Current Chart">
+                            <span class="material-icons">show_chart</span>
+                        </button>
+                        <button class="view-btn" onclick="exportExcel()" title="Export Excel">
+                            <span class="material-icons">file_download</span>
+                        </button>
+                    </div>
+                    <div class="table-info" id="tableInfo">Select device and date to view data</div>
+                </div>
+            </div>
+            <div id="tableViewContainer">
+                <div class="table-wrapper">
+                    <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Room Temp (°C)</th>
+                            <th>Coil Temp (°C)</th>
+                            <th>Setpoint (°C)</th>
+                            <th>Comp R (A)</th>
+                            <th>Comp Y (A)</th>
+                            <th>Comp B (A)</th>
+                            <th>Mode</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody">
+                        <tr>
+                            <td colspan="8" class="no-data">
+                                <div class="material-icons">search</div>
+                                <p>Select a device and date, then click "Load Data" to view historical records</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination-container" id="paginationContainer" style="display: none;">
+                <div class="pagination-info" id="paginationInfo"></div>
+                <div class="pagination-controls">
+                    <div class="page-size-selector">
+                        <label>Show:</label>
+                        <select id="pageSizeSelect" onchange="changePageSize()">
+                            <option value="15" selected>15</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span>per page</span>
+                    </div>
+                    <div class="pagination-buttons">
+                        <button class="page-btn" onclick="changePage(-100)" id="prevBtn100">
+                            <span class="material-icons">fast_rewind</span>
+                            -100
+                        </button>
+                        <button class="page-btn" onclick="changePage(-10)" id="prevBtn10">
+                            <span class="material-icons">skip_previous</span>
+                            -10
+                        </button>
+                        <button class="page-btn" onclick="changePage(-1)" id="prevBtn1">
+                            <span class="material-icons">chevron_left</span>
+                            -1
+                        </button>
+                        <div class="page-number" id="currentPageDisplay">1</div>
+                        <button class="page-btn" onclick="changePage(1)" id="nextBtn1">
+                            +1
+                            <span class="material-icons">chevron_right</span>
+                        </button>
+                        <button class="page-btn" onclick="changePage(10)" id="nextBtn10">
+                            +10
+                            <span class="material-icons">skip_next</span>
+                        </button>
+                        <button class="page-btn" onclick="changePage(100)" id="nextBtn100">
+                            +100
+                            <span class="material-icons">fast_forward</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- Charts Container -->
+            <div id="chartsViewContainer">
+                <!-- Temperature Chart Container -->
+                <div id="tempChartContainer" class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-controls">
+                            <div class="time-range-group">
+                                <button class="time-range-btn" data-range="1" onclick="changeTempTimeRange(1)">1h</button>
+                                <button class="time-range-btn" data-range="2" onclick="changeTempTimeRange(2)">2h</button>
+                                <button class="time-range-btn" data-range="3" onclick="changeTempTimeRange(3)">3h</button>
+                                <button class="time-range-btn" data-range="6" onclick="changeTempTimeRange(6)">6h</button>
+                                <button class="time-range-btn" data-range="12" onclick="changeTempTimeRange(12)">12h</button>
+                                <button class="time-range-btn active" data-range="24" onclick="changeTempTimeRange(24)">24h</button>
+                            </div>
+                            <select class="time-period-dropdown" id="tempTimePeriod" style="display: none;" onchange="onTempTimePeriodChange()">
+                                <option value="">เลือกช่วงเวลา</option>
+                            </select>
+                        </div>
+                        <div class="chart-title">
+                            <span class="material-icons" style="color: #4fc3f7;">thermostat</span>
+                            Temperature Chart
+                        </div>
+                        <div class="chart-actions">
+                            <button class="chart-action-btn" onclick="resetTempZoom()" title="Reset Zoom">
+                                <span class="material-icons" style="font-size: 1rem;">zoom_out_map</span>
+                            </button>
+                            <button class="chart-action-btn" onclick="changeView('table')" title="Close">
+                                <span class="material-icons" style="font-size: 1rem;">close</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="temperatureChart"></canvas>
+                        <div id="tempChartNoData" class="chart-no-data" style="display: none;">
+                            <span class="material-icons">inbox</span>
+                            <p>No data available</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Chart Container -->
+                <div id="currentChartContainer" class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-controls">
+                            <div class="time-range-group">
+                                <button class="time-range-btn" data-range="1" onclick="changeCurrentTimeRange(1)">1h</button>
+                                <button class="time-range-btn" data-range="2" onclick="changeCurrentTimeRange(2)">2h</button>
+                                <button class="time-range-btn" data-range="3" onclick="changeCurrentTimeRange(3)">3h</button>
+                                <button class="time-range-btn" data-range="6" onclick="changeCurrentTimeRange(6)">6h</button>
+                                <button class="time-range-btn" data-range="12" onclick="changeCurrentTimeRange(12)">12h</button>
+                                <button class="time-range-btn active" data-range="24" onclick="changeCurrentTimeRange(24)">24h</button>
+                            </div>
+                            <select class="time-period-dropdown" id="currentTimePeriod" style="display: none;" onchange="onCurrentTimePeriodChange()">
+                                <option value="">เลือกช่วงเวลา</option>
+                            </select>
+                        </div>
+                        <div class="chart-title">
+                            <span class="material-icons" style="color: #ffc107;">electric_bolt</span>
+                            Current Chart
+                        </div>
+                        <div class="chart-actions">
+                            <button class="chart-action-btn" onclick="resetCurrentZoom()" title="Reset Zoom">
+                                <span class="material-icons" style="font-size: 1rem;">zoom_out_map</span>
+                            </button>
+                            <button class="chart-action-btn" onclick="changeView('table')" title="Close">
+                                <span class="material-icons" style="font-size: 1rem;">close</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="currentChart"></canvas>
+                        <div id="currentChartNoData" class="chart-no-data" style="display: none;">
+                            <span class="material-icons">inbox</span>
+                            <p>No data available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="exportModal" class="export-modal">
+        <div class="export-modal-content">
+            <div class="export-modal-header">
+                <h3>Export Data</h3>
+                <button class="export-modal-close" onclick="closeExportModal()">&times;</button>
+            </div>
+            <div class="export-form-group">
+                <label for="exportStartDateTime">Start Date & Time:</label>
+                <input type="datetime-local" id="exportStartDateTime" class="export-datetime-input">
+            </div>
+            <div class="export-form-group">
+                <label for="exportEndDateTime">End Date & Time:</label>
+                <input type="datetime-local" id="exportEndDateTime" class="export-datetime-input">
+            </div>
+            <div class="export-modal-buttons">
+                <button class="export-btn export-btn-secondary" onclick="closeExportModal()">Cancel</button>
+                <button class="export-btn export-btn-primary" onclick="confirmExport()">Export</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Pagination state
+        let allData = [];
+        let currentPage = 1;
+        let pageSize = 15;
+        let totalPages = 1;
+
+        // Chart instances
+        let temperatureChart = null;
+        let currentChart = null;
+
+        // โหลดรายการ devices
+        async function loadDevices() {
+            try {
+                const response = await fetch('http://localhost:2052/api/devices');
+                const devices = await response.json();
+                
+                // เรียงลำดับแบบ natural sort
+                devices.sort((a, b) => {
+                    return a.name.localeCompare(b.name, undefined, {
+                        numeric: true,
+                        sensitivity: 'base'
+                    });
+                });
+                
+                const deviceSelect = document.getElementById('deviceSelect');
+                const savedDevice = localStorage.getItem('selectedDevice');
+                
+                deviceSelect.innerHTML = '<option value="">-- Select a device --</option>';
+                
+                devices.forEach(device => {
+                    const option = document.createElement('option');
+                    option.value = device.name;
+                    option.textContent = device.name;
+                    if (device.name === savedDevice) {
+                        option.selected = true;
+                    }
+                    deviceSelect.appendChild(option);
+                });
+                
+                // โหลดข้อมูลอัตโนมัติถ้ามีการเลือกไว้
+                if (savedDevice) {
+                    loadData();
+                }
+            } catch (error) {
+                console.error('Error loading devices:', error);
+            }
+        }
+
+        // โหลดข้อมูล
+        async function loadData() {
+            const deviceName = document.getElementById('deviceSelect').value;
+            const dateInput = document.getElementById('dateInput').value;
+
+            if (!deviceName) {
+                return;
+            }
+
+            if (!dateInput) {
+                return;
+            }
+
+            // บันทึกการเลือกลง localStorage
+            localStorage.setItem('selectedDevice', deviceName);
+            localStorage.setItem('selectedDate', dateInput);
+
+            const tableBody = document.getElementById('dataTableBody');
+            const tableInfo = document.getElementById('tableInfo');
+
+            // แสดง loading
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="no-data">
+                        <div class="material-icons">hourglass_empty</div>
+                        <p>Loading data...</p>
+                    </td>
+                </tr>
+            `;
+
+            try {
+                // สร้าง date range สำหรับ query (ทั้งวัน)
+                const startDate = new Date(dateInput);
+                startDate.setHours(0, 0, 0, 0);
+                
+                const endDate = new Date(dateInput);
+                endDate.setHours(23, 59, 59, 999);
+
+                // ใช้ maxPoints ที่แตกต่างกัน: table=2880, chart=720
+                const url = `http://localhost:2052/api/data-logs/${encodeURIComponent(deviceName)}?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}&maxPoints=2880`;
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                allData = result.data || [];
+                const tableSize = result.tableSize || 0;
+                
+                if (allData.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="no-data">
+                                <div class="material-icons">inbox</div>
+                                <p>No data found for ${deviceName} on ${dateInput}</p>
+                            </td>
+                        </tr>
+                    `;
+                    tableInfo.textContent = 'No records found';
+                    document.getElementById('paginationContainer').style.display = 'none';
+                } else {
+                    // Reset to first page
+                    currentPage = 1;
+                    totalPages = Math.ceil(allData.length / pageSize);
+                    
+                    // Display first page
+                    displayPage();
+                    updatePaginationControls();
+                    document.getElementById('paginationContainer').style.display = 'flex';
+                    tableInfo.textContent = `Table size: ${tableSize} KB`;
+                }
+                
+                // Reset time range to "All" when loading new data (ต้อง reset ก่อนสร้าง chart)
+                tempTimeRange = 24;
+                currentTimeRange = 24;
+                
+                // Update time range buttons to show "All" as active
+                document.querySelectorAll('.time-range-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.hours === '24') {
+                        btn.classList.add('active');
+                    }
+                });
+                
+                // Update charts if currently viewing them (เรียกหลัง reset time range)
+                const tempContainer = document.getElementById('tempChartContainer');
+                const currentContainer = document.getElementById('currentChartContainer');
+                const tableViewContainer = document.getElementById('tableViewContainer');
+                
+                // ถ้า chart container มี class active หรือ table ไม่ได้ hidden (แสดงว่าเคยเปิด chart)
+                const wasShowingTempChart = tempContainer && tempContainer.classList.contains('active');
+                const wasShowingCurrentChart = currentContainer && currentContainer.classList.contains('active');
+                
+                if (wasShowingTempChart) {
+                    createTemperatureChart();
+                }
+                if (wasShowingCurrentChart) {
+                    createCurrentChart();
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="no-data">
+                            <div class="material-icons">error</div>
+                            <p>Error loading data: ${error.message}</p>
+                        </td>
+                    </tr>
+                `;
+                tableInfo.textContent = 'Error';
+                document.getElementById('paginationContainer').style.display = 'none';
+            }
+        }
+
+        // Display current page
+        function displayPage() {
+            const tableBody = document.getElementById('dataTableBody');
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const pageData = allData.slice(startIndex, endIndex);
+
+            if (pageData.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="no-data">
+                            <div class="material-icons">inbox</div>
+                            <p>No data on this page</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            // ตรวจสอบว่าเป็น JSON device หรือไม่ (ดูจาก column ที่มี)
+            const isJsonDevice = pageData.length > 0 && (pageData[0].temp_r !== undefined);
+
+            // Update table header ตาม device type
+            const tableHeader = document.querySelector('.data-table thead tr');
+            if (isJsonDevice) {
+                tableHeader.innerHTML = `
+                    <th>Time</th>
+                    <th>Room Temp (°C)</th>
+                    <th>Coil Temp (°C)</th>
+                    <th>Setpoint (°C)</th>
+                    <th>Main R (A)</th>
+                    <th>Main Y (A)</th>
+                    <th>Main B (A)</th>
+                    <th>Fan (A)</th>
+                    <th>Heater (A)</th>
+                    <th>Comp R (A)</th>
+                    <th>Comp Y (A)</th>
+                    <th>Comp B (A)</th>
+                    <th>Comp</th>
+                    <th>Fan</th>
+                    <th>Heater</th>
+                    <th>OL</th>
+                    <th>PL</th>
+                    <th>LP</th>
+                    <th>HP</th>
+                `;
+            } else {
+                tableHeader.innerHTML = `
+                    <th>Time</th>
+                    <th>Room Temp (°C)</th>
+                    <th>Coil Temp (°C)</th>
+                    <th>Setpoint (°C)</th>
+                    <th>Comp R (A)</th>
+                    <th>Comp Y (A)</th>
+                    <th>Comp B (A)</th>
+                    <th>Mode</th>
+                `;
+            }
+
+            tableBody.innerHTML = pageData.map(row => {
+                // Backend sends UTC timestamp, browser converts to local time automatically
+                const date = new Date(row.time_stamp);
+                const time = date.toLocaleString('en-GB', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+
+                // กำหนดสี temp
+                const getTempClass = (temp) => {
+                    if (temp < -5) return 'temp-cold';
+                    if (temp > 10) return 'temp-warm';
+                    return 'temp-normal';
+                };
+
+                if (isJsonDevice) {
+                    // Render JSON device data
+                    const tempR = parseFloat(row.temp_r || 0);
+                    const tempC = parseFloat(row.temp_c || 0);
+                    const tempSp = parseFloat(row.temp_sp || 0);
+                    
+                    // Helper function to display current: '-' if 0, else 1 decimal
+                    const displayCurrent = (val) => {
+                        const num = parseFloat(val || 0);
+                        return num === 0 ? '-' : num.toFixed(1);
+                    };
+
+                    return `
+                        <tr>
+                            <td>${time}</td>
+                            <td class="temp-value ${getTempClass(tempR)}">${tempR.toFixed(1)}</td>
+                            <td class="temp-value ${getTempClass(tempC)}">${tempC.toFixed(1)}</td>
+                            <td class="temp-value ${getTempClass(tempSp)}">${tempSp.toFixed(1)}</td>
+                            <td>${displayCurrent(row.cur_m_r)}</td>
+                            <td>${displayCurrent(row.cur_m_y)}</td>
+                            <td>${displayCurrent(row.cur_m_b)}</td>
+                            <td>${displayCurrent(row.cur_f)}</td>
+                            <td>${displayCurrent(row.cur_h)}</td>
+                            <td>${displayCurrent(row.cur_cp_r)}</td>
+                            <td>${displayCurrent(row.cur_cp_y)}</td>
+                            <td>${displayCurrent(row.cur_cp_b)}</td>
+                            <td><span class="material-icons status-icon ${row.stat_cp ? 'on' : 'off'}">${row.stat_cp ? 'check_circle' : 'cancel'}</span></td>
+                            <td><span class="material-icons status-icon ${row.stat_f ? 'on' : 'off'}">${row.stat_f ? 'check_circle' : 'cancel'}</span></td>
+                            <td><span class="material-icons status-icon ${row.stat_h ? 'heater-on' : 'off'}">${row.stat_h ? 'check_circle' : 'cancel'}</span></td>
+                            <td>${row.alm_ol ? '<span class="material-icons alarm-icon alarm-active">warning</span>' : ''}</td>
+                            <td>${row.alm_pl ? '<span class="material-icons alarm-icon alarm-active">warning</span>' : ''}</td>
+                            <td>${row.alm_lp ? '<span class="material-icons alarm-icon alarm-lp">warning</span>' : ''}</td>
+                            <td>${row.alm_hp ? '<span class="material-icons alarm-icon alarm-active">warning</span>' : ''}</td>
+                        </tr>
+                    `;
+                } else {
+                    // Render original device data
+                    const roomTemp = parseFloat(row.room_temp || 0);
+                    const coilTemp = parseFloat(row.coil_temp || 0);
+                    const setTemp = parseFloat(row.set_temp || 0);
+                    
+                    // Helper function to display current: '-' if 0, else 1 decimal
+                    const displayCurrent = (val) => {
+                        const num = parseFloat(val || 0);
+                        return num === 0 ? '-' : num.toFixed(1);
+                    };
+
+                    const modeValue = parseInt(row.mode || 0);
+                    const modeText = modeValue === 1 ? 'Defrost' : modeValue === 2 ? 'Drip' : '';
+
+                    return `
+                        <tr>
+                            <td>${time}</td>
+                            <td class="temp-value ${getTempClass(roomTemp)}">${roomTemp.toFixed(1)}</td>
+                            <td class="temp-value ${getTempClass(coilTemp)}">${coilTemp.toFixed(1)}</td>
+                            <td class="temp-value ${getTempClass(setTemp)}">${setTemp.toFixed(1)}</td>
+                            <td>${displayCurrent(row.comp_r)}</td>
+                            <td>${displayCurrent(row.comp_y)}</td>
+                            <td>${displayCurrent(row.comp_b)}</td>
+                            <td>${modeText}</td>
+                        </tr>
+                    `;
+                }
+            }).join('');
+        }
+
+        // Change page
+        function changePage(delta) {
+            const newPage = currentPage + delta;
+            
+            // ถ้าน้อยกว่า 1 ให้ไปหน้าแรก
+            if (newPage < 1) {
+                currentPage = 1;
+            }
+            // ถ้ามากกว่าจำนวนหน้าทั้งหมด ให้ไปหน้าสุดท้าย
+            else if (newPage > totalPages) {
+                currentPage = totalPages;
+            }
+            // ถ้าอยู่ในขอบเขต ให้ไปหน้าที่คำนวณได้
+            else {
+                currentPage = newPage;
+            }
+            
+            displayPage();
+            updatePaginationControls();
+        }
+
+        // Change page size
+        function changePageSize() {
+            pageSize = parseInt(document.getElementById('pageSizeSelect').value);
+            localStorage.setItem('pageSize', pageSize);
+            totalPages = Math.ceil(allData.length / pageSize);
+            currentPage = 1; // Reset to first page
+            displayPage();
+            updatePaginationControls();
+        }
+
+        // Update pagination controls
+        function updatePaginationControls() {
+            document.getElementById('currentPageDisplay').textContent = currentPage;
+            document.getElementById('paginationInfo').textContent = 
+                `Showing ${(currentPage - 1) * pageSize + 1} to ${Math.min(currentPage * pageSize, allData.length)} of ${allData.length} records (Page ${currentPage} of ${totalPages})`;
+
+            // Disable/enable buttons
+            document.getElementById('prevBtn1').disabled = currentPage <= 1;
+            document.getElementById('prevBtn10').disabled = currentPage <= 1;
+            document.getElementById('prevBtn100').disabled = currentPage <= 1;
+            
+            document.getElementById('nextBtn1').disabled = currentPage >= totalPages;
+            document.getElementById('nextBtn10').disabled = currentPage >= totalPages;
+            document.getElementById('nextBtn100').disabled = currentPage >= totalPages;
+        }
+
+        // Time range state
+        let tempTimeRange = 24;
+        let currentTimeRange = 24;
+
+        // Filter data by time range
+        function filterDataByTimeRange(data, hours, startHour = null, endHour = null) {
+            if (!data || data.length === 0) return [];
+            
+            // ถ้าระบุ startHour และ endHour ให้กรองตามช่วงเวลาในวัน
+            if (startHour !== null && endHour !== null) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                return data.filter(row => {
+                    const timestamp = new Date(row.time_stamp);
+                    const hour = timestamp.getHours();
+                    
+                    // ต้องเป็นวันเดียวกันและอยู่ในช่วงเวลาที่กำหนด
+                    return timestamp >= today && 
+                           timestamp < new Date(today.getTime() + 24 * 60 * 60 * 1000) &&
+                           hour >= startHour && hour <= endHour;
+                });
+            }
+            
+            // ถ้าไม่ระบุให้ใช้วิธีเดิม (นับย้อนหลังจากเวลาปัจจุบัน)
+            const now = new Date();
+            const cutoff = new Date(now.getTime() - (hours * 60 * 60 * 1000));
+            
+            return data.filter(row => {
+                const timestamp = new Date(row.time_stamp);
+                return timestamp >= cutoff;
+            });
+        }
+
+        // Downsample data for chart display only
+        function downsampleForChart(data, targetPoints = 720) {
+            if (data.length <= targetPoints) return data;
+            
+            const step = data.length / targetPoints;
+            const result = [];
+            
+            for (let i = 0; i < targetPoints; i++) {
+                const index = Math.floor(i * step);
+                result.push(data[index]);
+            }
+            
+            return result;
+        }
+
+        // Create temperature chart
+        function createTemperatureChart(startHour = null, endHour = null) {
+            // Filter data based on selected time range
+            let filteredData = filterDataByTimeRange(allData, tempTimeRange, startHour, endHour);
+            const originalCount = filteredData.length;
+            
+            // Downsample to 720 points for chart performance
+            filteredData = downsampleForChart(filteredData, 720);
+            
+            // Log data points info
+            if (originalCount !== filteredData.length) {
+                console.log(`🌡️ Temperature: ${originalCount} points → downsampled to ${filteredData.length} points`);
+            } else {
+                console.log(`🌡️ Temperature: ${filteredData.length} points (no downsampling needed)`);
+            }
+            
+            // ตรวจสอบว่ามีข้อมูลหรือไม่ - ถ้าไม่มีให้แสดง "No data" แทนการปิด chart
+            if (filteredData.length === 0) {
+                // ทำลาย chart ถ้ามีอยู่
+                if (temperatureChart) {
+                    temperatureChart.destroy();
+                    temperatureChart = null;
+                }
+                
+                // แสดงข้อความ "No data" แทนการปิด container
+                const canvas = document.getElementById('tempChart');
+                const noDataDiv = document.getElementById('tempChartNoData');
+                
+                if (canvas) canvas.style.display = 'none';
+                if (noDataDiv) {
+                    noDataDiv.style.display = 'flex';
+                    noDataDiv.innerHTML = '<div class="material-icons">info</div><p>No data in selected time range</p>';
+                }
+                
+                return;
+            }
+            
+            // Log จำนวนจุดที่จะ plot
+            console.log(`🌡️ Temperature Chart: Plotting ${filteredData.length} data points`);
+            
+            // ทำลาย chart เก่าก่อนสร้างใหม่
+            if (temperatureChart) {
+                temperatureChart.destroy();
+            }
+
+            const ctx = document.getElementById('temperatureChart').getContext('2d');
+            const noDataDiv = document.getElementById('tempChartNoData');
+            const canvas = document.getElementById('temperatureChart');
+            
+            canvas.style.display = 'block';
+            noDataDiv.style.display = 'none';
+            
+            // ตรวจสอบ device type
+            const isJsonDevice = filteredData.length > 0 && (filteredData[0].temp_r !== undefined);
+
+            // Prepare data in {x, y} format for time scale
+            const roomTempData = filteredData.map(row => ({
+                x: new Date(row.time_stamp),
+                y: parseFloat(isJsonDevice ? (row.temp_r || 0) : (row.room_temp || 0))
+            })).reverse();
+
+            const coilTempData = filteredData.map(row => ({
+                x: new Date(row.time_stamp),
+                y: parseFloat(isJsonDevice ? (row.temp_c || 0) : (row.coil_temp || 0))
+            })).reverse();
+
+            const setTempData = filteredData.map(row => ({
+                x: new Date(row.time_stamp),
+                y: parseFloat(isJsonDevice ? (row.temp_sp || 0) : (row.set_temp || 0))
+            })).reverse();
+
+            temperatureChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [
+                        {
+                            label: 'Room Temp',
+                            data: roomTempData,
+                            borderColor: 'rgb(75, 192, 192)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            pointHoverRadius: 6,
+                            fill: false,
+                            spanGaps: 60000,
+                            segment: {
+                                borderColor: ctx => {
+                                    const prev = ctx.p0;
+                                    const next = ctx.p1;
+                                    if (prev && next && next.parsed.x - prev.parsed.x > 60000) {
+                                        return 'transparent';
+                                    }
+                                    return 'rgb(75, 192, 192)';
+                                }
+                            }
+                        },
+                        {
+                            label: 'Coil Temp',
+                            data: coilTempData,
+                            borderColor: 'rgb(54, 162, 235)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            pointHoverRadius: 6,
+                            fill: false,
+                            spanGaps: 60000,
+                            segment: {
+                                borderColor: ctx => {
+                                    const prev = ctx.p0;
+                                    const next = ctx.p1;
+                                    if (prev && next && next.parsed.x - prev.parsed.x > 60000) {
+                                        return 'transparent';
+                                    }
+                                    return 'rgb(54, 162, 235)';
+                                }
+                            }
+                        },
+                        {
+                            label: 'Setpoint',
+                            data: setTempData,
+                            borderColor: 'rgb(255, 99, 132)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            borderDash: [5, 5],
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            pointHoverRadius: 6,
+                            fill: false,
+                            spanGaps: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: { color: 'white' }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    if (context[0] && context[0].parsed && context[0].parsed.x) {
+                                        const date = new Date(context[0].parsed.x);
+                                        const thaiDate = date.toLocaleDateString('th-TH', {
+                                            timeZone: 'Asia/Bangkok',
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric'
+                                        });
+                                        const thaiTime = date.toLocaleTimeString('th-TH', {
+                                            timeZone: 'Asia/Bangkok',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            second: '2-digit'
+                                        });
+                                        return `${thaiDate} เวลา ${thaiTime}`;
+                                    }
+                                    return 'Unknown time';
+                                },
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y.toFixed(1)} °C`;
+                                }
+                            }
+                        },
+                        zoom: {
+                            zoom: {
+                                wheel: {
+                                    enabled: true,
+                                    speed: 0.1
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                mode: 'x'
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: 'x'
+                            },
+                            limits: {
+                                x: {min: 'original', max: 'original'}
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                displayFormats: {
+                                    minute: 'HH:mm',
+                                    hour: 'HH:mm'
+                                },
+                                timezone: 'Asia/Bangkok'
+                            },
+                            ticks: { 
+                                color: 'white',
+                                maxRotation: 45,
+                                minRotation: 0
+                            },
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            title: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            title: {
+                                display: true,
+                                text: 'Temperature (°C)',
+                                color: 'white'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create current chart
+        function createCurrentChart(startHour = null, endHour = null) {
+            // Filter data based on selected time range
+            let filteredData = filterDataByTimeRange(allData, currentTimeRange, startHour, endHour);
+            const originalCount = filteredData.length;
+            
+            // Downsample to 720 points for chart performance
+            filteredData = downsampleForChart(filteredData, 720);
+            
+            // Log data points info
+            if (originalCount !== filteredData.length) {
+                console.log(`⚡ Current: ${originalCount} points → downsampled to ${filteredData.length} points`);
+            } else {
+                console.log(`⚡ Current: ${filteredData.length} points (no downsampling needed)`);
+            }
+            
+            // ตรวจสอบว่ามีข้อมูลหรือไม่ - ถ้าไม่มีให้แสดง "No data" แทนการปิด chart
+            if (filteredData.length === 0) {
+                // ทำลาย chart ถ้ามีอยู่
+                if (currentChart) {
+                    currentChart.destroy();
+                    currentChart = null;
+                }
+                
+                // แสดงข้อความ "No data" แทนการปิด container
+                const canvas = document.getElementById('currentChart');
+                const noDataDiv = document.getElementById('currentChartNoData');
+                
+                if (canvas) canvas.style.display = 'none';
+                if (noDataDiv) {
+                    noDataDiv.style.display = 'flex';
+                    noDataDiv.innerHTML = '<div class="material-icons">info</div><p>No data in selected time range</p>';
+                }
+                
+                return;
+            }
+            
+            // Log จำนวนจุดที่จะ plot
+            console.log(`⚡ Current Chart: Plotting ${filteredData.length} data points`);
+            
+            // ทำลาย chart เก่าก่อนสร้างใหม่
+            if (currentChart) {
+                currentChart.destroy();
+            }
+
+            const ctx = document.getElementById('currentChart').getContext('2d');
+            const noDataDiv = document.getElementById('currentChartNoData');
+            const canvas = document.getElementById('currentChart');
+            
+            canvas.style.display = 'block';
+            noDataDiv.style.display = 'none';
+            
+            // ตรวจสอบ device type
+            const isJsonDevice = filteredData.length > 0 && (filteredData[0].temp_r !== undefined);
+            
+            // Log device type and data characteristics
+            if (filteredData.length > 0) {
+                const firstData = filteredData[0];
+                const lastData = filteredData[filteredData.length - 1];
+                const timeSpan = new Date(lastData.time_stamp) - new Date(firstData.time_stamp);
+                const avgInterval = timeSpan / filteredData.length / 1000; // seconds
+                
+                console.log(`\n📊 ========== CURRENT CHART ANALYSIS ==========`);
+                console.log(`📊 Device Type: ${isJsonDevice ? 'JSON Device (New - No MAC)' : 'Original Device (Has MAC)'}`);
+                console.log(`📊 Data Points: ${filteredData.length}`);
+                console.log(`📊 Time Span: ${(timeSpan /  1000 / 60).toFixed(1)} minutes`);
+                console.log(`📊 Average Interval: ${avgInterval.toFixed(2)} seconds`);
+                
+                if (isJsonDevice) {
+                    // Check for sample current values
+                    const sampleData = filteredData[Math.floor(filteredData.length / 2)];
+                    console.log(`📊 Current Lines: 8 (Main R/Y/B, Fan, Heater, Comp R/Y/B)`);
+                    console.log(`📊 Sample Values:`, {
+                        main_r: parseFloat(sampleData.cur_m_r || 0).toFixed(1),
+                        main_y: parseFloat(sampleData.cur_m_y || 0).toFixed(1),
+                        main_b: parseFloat(sampleData.cur_m_b || 0).toFixed(1),
+                        fan: parseFloat(sampleData.cur_f || 0).toFixed(1),
+                        heater: parseFloat(sampleData.cur_h || 0).toFixed(1),
+                        comp_r: parseFloat(sampleData.cur_cp_r || 0).toFixed(1),
+                        comp_y: parseFloat(sampleData.cur_cp_y || 0).toFixed(1),
+                        comp_b: parseFloat(sampleData.cur_cp_b || 0).toFixed(1)
+                    });
+                } else {
+                    // Original device
+                    const sampleData = filteredData[Math.floor(filteredData.length / 2)];
+                    console.log(`📊 Current Lines: 3 (Comp R/Y/B only)`);
+                    console.log(`📊 Sample Values:`, {
+                        comp_r: parseFloat(sampleData.comp_r || 0).toFixed(1),
+                        comp_y: parseFloat(sampleData.comp_y || 0).toFixed(1),
+                        comp_b: parseFloat(sampleData.comp_b || 0).toFixed(1)
+                    });
+                }
+                
+                // Check for data gaps and consistency
+                let maxGap = 0;
+                let minGap = Infinity;
+                let gaps = [];
+                for (let i = 1; i < filteredData.length; i++) {
+                    const gap = (new Date(filteredData[i].time_stamp) - new Date(filteredData[i-1].time_stamp)) / 1000;
+                    gaps.push(gap);
+                    if (gap > maxGap) maxGap = gap;
+                    if (gap < minGap) minGap = gap;
+                }
+                
+                // Calculate standard deviation of gaps
+                const avgGap = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+                const variance = gaps.reduce((sum, gap) => sum + Math.pow(gap - avgGap, 2), 0) / gaps.length;
+                const stdDev = Math.sqrt(variance);
+                
+                console.log(`📊 Gap Analysis:`);
+                console.log(`   - Min Gap: ${minGap.toFixed(2)}s`);
+                console.log(`   - Max Gap: ${maxGap.toFixed(2)}s`);
+                console.log(`   - Std Dev: ${stdDev.toFixed(2)}s (${stdDev < 1 ? 'Very Consistent ✅' : stdDev < 3 ? 'Consistent' : 'Inconsistent ⚠️'})`);
+                console.log(`📊 Chart Config: tension=0.4, borderWidth=2, pointRadius=0`);
+                console.log(`📊 ============================================\n`);
+            }
+
+            // Prepare data in {x, y} format for time scale
+            // Prepare datasets based on device type
+            let datasets = [];
+            
+            if (isJsonDevice) {
+                // JSON device - show all currents: Main R/Y/B, Fan, Heater, Comp R/Y/B
+                datasets = [
+                    {
+                        label: 'Main R',
+                        data: filteredData.map(row => ({x: new Date(row.time_stamp), y: parseFloat(row.cur_m_r || 0)})).reverse(),
+                        borderColor: 'rgb(255, 99, 132)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: 'Main Y',
+                        data: filteredData.map(row => ({x: new Date(row.time_stamp), y: parseFloat(row.cur_m_y || 0)})).reverse(),
+                        borderColor: 'rgb(255, 205, 86)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: 'Main B',
+                        data: filteredData.map(row => ({x: new Date(row.time_stamp), y: parseFloat(row.cur_m_b || 0)})).reverse(),
+                        borderColor: 'rgb(54, 162, 235)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: 'Fan',
+                        data: filteredData.map(row => ({x: new Date(row.time_stamp), y: parseFloat(row.cur_f || 0)})).reverse(),
+                        borderColor: 'rgb(153, 102, 255)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: 'Heater',
+                        data: filteredData.map(row => ({x: new Date(row.time_stamp), y: parseFloat(row.cur_h || 0)})).reverse(),
+                        borderColor: 'rgb(255, 159, 64)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: 'Comp R',
+                        data: filteredData.map(row => ({x: new Date(row.time_stamp), y: parseFloat(row.cur_cp_r || 0)})).reverse(),
+                        borderColor: 'rgb(75, 192, 192)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: 'Comp Y',
+                        data: filteredData.map(row => ({x: new Date(row.time_stamp), y: parseFloat(row.cur_cp_y || 0)})).reverse(),
+                        borderColor: 'rgb(255, 99, 255)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: 'Comp B',
+                        data: filteredData.map(row => ({x: new Date(row.time_stamp), y: parseFloat(row.cur_cp_b || 0)})).reverse(),
+                        borderColor: 'rgb(99, 255, 132)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    }
+                ];
+            } else {
+                // Original device - show only Comp R/Y/B
+                datasets = [
+                    {
+                        label: 'Comp R',
+                        data: filteredData.map(row => ({x: new Date(row.time_stamp), y: parseFloat(row.comp_r || 0)})).reverse(),
+                        borderColor: 'rgb(255, 99, 132)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: 'Comp Y',
+                        data: filteredData.map(row => ({x: new Date(row.time_stamp), y: parseFloat(row.comp_y || 0)})).reverse(),
+                        borderColor: 'rgb(255, 205, 86)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    },
+                    {
+                        label: 'Comp B',
+                        data: filteredData.map(row => ({x: new Date(row.time_stamp), y: parseFloat(row.comp_b || 0)})).reverse(),
+                        borderColor: 'rgb(54, 162, 235)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    }
+                ];
+            }
+
+            currentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: { color: 'white' }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    if (context[0] && context[0].parsed && context[0].parsed.x) {
+                                        const date = new Date(context[0].parsed.x);
+                                        const thaiDate = date.toLocaleDateString('th-TH', {
+                                            timeZone: 'Asia/Bangkok',
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric'
+                                        });
+                                        const thaiTime = date.toLocaleTimeString('th-TH', {
+                                            timeZone: 'Asia/Bangkok',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            second: '2-digit'
+                                        });
+                                        return `${thaiDate} เวลา ${thaiTime}`;
+                                    }
+                                    return 'Unknown time';
+                                },
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    const displayValue = value === 0 ? '-' : value.toFixed(1);
+                                    return `${context.dataset.label}: ${displayValue}${value === 0 ? '' : ' A'}`;
+                                }
+                            }
+                        },
+                        zoom: {
+                            zoom: {
+                                wheel: {
+                                    enabled: true,
+                                    speed: 0.1
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                mode: 'x'
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: 'x'
+                            },
+                            limits: {
+                                x: {min: 'original', max: 'original'}
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                displayFormats: {
+                                    minute: 'HH:mm',
+                                    hour: 'HH:mm'
+                                },
+                                timezone: 'Asia/Bangkok'
+                            },
+                            ticks: { 
+                                color: 'white',
+                                maxRotation: 45,
+                                minRotation: 0
+                            },
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            title: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            title: {
+                                display: true,
+                                text: 'Current (A)',
+                                color: 'white'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Change view mode
+        function changeView(viewType) {
+            const clickedBtn = event.target.closest('.view-btn');
+            const tempContainer = document.getElementById('tempChartContainer');
+            const currentContainer = document.getElementById('currentChartContainer');
+            const tableViewBtn = document.querySelector('.view-btn[data-view="table"]');
+            
+            if (viewType === 'table') {
+                // Show only table
+                document.querySelectorAll('.view-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                clickedBtn.classList.add('active');
+                
+                document.getElementById('tableViewContainer').classList.remove('hidden');
+                tempContainer.classList.remove('active', 'first');
+                currentContainer.classList.remove('active', 'first');
+            } else if (viewType === 'temp') {
+                // Toggle temperature chart
+                clickedBtn.classList.toggle('active');
+                const isActive = clickedBtn.classList.contains('active');
+                
+                if (isActive) {
+                    document.getElementById('tableViewContainer').classList.add('hidden');
+                    tempContainer.classList.add('active');
+                    
+                    // Remove table button active state
+                    if (tableViewBtn) tableViewBtn.classList.remove('active');
+                    
+                    // If current chart not active, make temp first
+                    if (!currentContainer.classList.contains('active')) {
+                        tempContainer.classList.add('first');
+                    } else {
+                        // If current is active, check which was clicked first
+                        if (!tempContainer.classList.contains('first') && !currentContainer.classList.contains('first')) {
+                            currentContainer.classList.add('first');
+                        }
+                    }
+                    
+                    // เรียก create chart เสมอ (ฟังก์ชันจะจัดการกรณีไม่มีข้อมูลเอง)
+                    createTemperatureChart();
+                } else {
+                    tempContainer.classList.remove('active', 'first');
+                    // If no charts active, show table
+                    if (!currentContainer.classList.contains('active')) {
+                        document.getElementById('tableViewContainer').classList.remove('hidden');
+                        if (tableViewBtn) tableViewBtn.classList.add('active');
+                    }
+                }
+            } else if (viewType === 'current') {
+                // Toggle current chart
+                clickedBtn.classList.toggle('active');
+                const isActive = clickedBtn.classList.contains('active');
+                
+                if (isActive) {
+                    document.getElementById('tableViewContainer').classList.add('hidden');
+                    currentContainer.classList.add('active');
+                    
+                    // Remove table button active state
+                    if (tableViewBtn) tableViewBtn.classList.remove('active');
+                    
+                    // If temp chart not active, make current first
+                    if (!tempContainer.classList.contains('active')) {
+                        currentContainer.classList.add('first');
+                    } else {
+                        // If temp is active, check which was clicked first
+                        if (!tempContainer.classList.contains('first') && !currentContainer.classList.contains('first')) {
+                            tempContainer.classList.add('first');
+                        }
+                    }
+                    
+                    // เรียก create chart เสมอ (ฟังก์ชันจะจัดการกรณีไม่มีข้อมูลเอง)
+                    createCurrentChart();
+                } else {
+                    currentContainer.classList.remove('active', 'first');
+                    // If no charts active, show table
+                    if (!tempContainer.classList.contains('active')) {
+                        document.getElementById('tableViewContainer').classList.remove('hidden');
+                        if (tableViewBtn) tableViewBtn.classList.add('active');
+                    }
+                }
+            }
+            
+            // บันทึกสถานะการแสดงผล
+            saveViewState();
+            
+            // ปรับความสูงของ chart
+            updateChartHeights();
+        }
+        
+        // ปรับความสูงของ chart ตามจำนวนที่แสดง
+        function updateChartHeights() {
+            const tempContainer = document.getElementById('tempChartContainer');
+            const currentContainer = document.getElementById('currentChartContainer');
+            const tempWrapper = document.querySelector('#tempChartContainer .chart-wrapper');
+            const currentWrapper = document.querySelector('#currentChartContainer .chart-wrapper');
+            
+            const tempActive = tempContainer.classList.contains('active');
+            const currentActive = currentContainer.classList.contains('active');
+            
+            // ถ้าแสดง 1 chart = สูง 640px, ถ้าแสดง 2 charts = สูง 280px
+            if (tempActive && !currentActive) {
+                // แสดงแค่ temp chart
+                if (tempWrapper) tempWrapper.style.height = '640px';
+            } else if (!tempActive && currentActive) {
+                // แสดงแค่ current chart
+                if (currentWrapper) currentWrapper.style.height = '640px';
+            } else if (tempActive && currentActive) {
+                // แสดงทั้ง 2 charts
+                if (tempWrapper) tempWrapper.style.height = '280px';
+                if (currentWrapper) currentWrapper.style.height = '280px';
+            }
+        }
+        
+        // บันทึกสถานะการแสดงผลใน localStorage
+        function saveViewState() {
+            const tempContainer = document.getElementById('tempChartContainer');
+            const currentContainer = document.getElementById('currentChartContainer');
+            const tableContainer = document.getElementById('tableViewContainer');
+            
+            const viewState = {
+                showTable: !tableContainer.classList.contains('hidden'),
+                showTempChart: tempContainer.classList.contains('active'),
+                showCurrentChart: currentContainer.classList.contains('active'),
+                tempFirst: tempContainer.classList.contains('first'),
+                currentFirst: currentContainer.classList.contains('first')
+            };
+            
+            localStorage.setItem('viewState', JSON.stringify(viewState));
+        }
+
+        // สร้าง options สำหรับ dropdown ตามจำนวนชั่วโมง
+        function generateTimePeriodOptions(hours) {
+            const options = [];
+            const periodsPerDay = 24 / hours;
+            
+            for (let i = 0; i < periodsPerDay; i++) {
+                const startHour = i * hours;
+                const endHour = startHour + hours - 1;
+                const startTime = `${String(startHour).padStart(2, '0')}:00`;
+                const endTime = `${String(endHour).padStart(2, '0')}:59`;
+                
+                options.push({
+                    value: `${startHour}-${endHour}`,
+                    text: `${startTime} - ${endTime}`,
+                    startHour: startHour,
+                    endHour: endHour
+                });
+            }
+            
+            return options;
+        }
+
+        // อัพเดท dropdown และแสดง/ซ่อนตามที่เลือก
+        function updateTimePeriodDropdown(dropdownId, hours) {
+            const dropdown = document.getElementById(dropdownId);
+            if (!dropdown) return;
+            
+            // ถ้าเลือก 24h ให้ซ่อน dropdown
+            if (hours === 24) {
+                dropdown.style.display = 'none';
+                return;
+            }
+            
+            // แสดง dropdown และสร้าง options
+            dropdown.style.display = 'inline-block';
+            const options = generateTimePeriodOptions(hours);
+            
+            // ล้าง options เดิม
+            dropdown.innerHTML = '<option value="">เลือกช่วงเวลา</option>';
+            
+            // เพิ่ม options ใหม่
+            options.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option.value;
+                opt.textContent = option.text;
+                opt.dataset.startHour = option.startHour;
+                opt.dataset.endHour = option.endHour;
+                dropdown.appendChild(opt);
+            });
+            
+            // เลือก period ปัจจุบันโดยอัตโนมัติ
+            autoSelectCurrentTimePeriod(dropdown, hours);
+        }
+
+        // เลือก period ที่ตรงกับเวลาปัจจุบันโดยอัตโนมัติ
+        function autoSelectCurrentTimePeriod(dropdown, hours) {
+            const now = new Date();
+            const currentHour = now.getHours();
+            
+            for (let option of dropdown.options) {
+                if (option.dataset.startHour !== undefined) {
+                    const startHour = parseInt(option.dataset.startHour);
+                    const endHour = parseInt(option.dataset.endHour);
+                    
+                    if (currentHour >= startHour && currentHour <= endHour) {
+                        option.selected = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // เมื่อเลือกช่วงเวลาใน dropdown สำหรับ Temperature
+        function onTempTimePeriodChange() {
+            const dropdown = document.getElementById('tempTimePeriod');
+            const selectedOption = dropdown.options[dropdown.selectedIndex];
+            
+            if (selectedOption.value === '') return;
+            
+            const startHour = parseInt(selectedOption.dataset.startHour);
+            const endHour = parseInt(selectedOption.dataset.endHour);
+            
+            // สร้าง chart ใหม่ด้วยช่วงเวลาที่เลือก
+            createTemperatureChart(startHour, endHour);
+        }
+
+        // เมื่อเลือกช่วงเวลาใน dropdown สำหรับ Current
+        function onCurrentTimePeriodChange() {
+            const dropdown = document.getElementById('currentTimePeriod');
+            const selectedOption = dropdown.options[dropdown.selectedIndex];
+            
+            if (selectedOption.value === '') return;
+            
+            const startHour = parseInt(selectedOption.dataset.startHour);
+            const endHour = parseInt(selectedOption.dataset.endHour);
+            
+            // สร้าง chart ใหม่ด้วยช่วงเวลาที่เลือก
+            createCurrentChart(startHour, endHour);
+        }
+
+        // Change temperature time range
+        function changeTempTimeRange(hours) {
+            tempTimeRange = hours;
+            
+            // Update button states
+            document.querySelectorAll('#tempChartContainer .time-range-btn').forEach(btn => {
+                if (parseInt(btn.getAttribute('data-range')) === hours) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // อัพเดท dropdown
+            updateTimePeriodDropdown('tempTimePeriod', hours);
+            
+            if (document.getElementById('tempChartContainer').classList.contains('active')) {
+                // ถ้าเลือก 24h ให้สร้าง chart ทันที
+                if (hours === 24) {
+                    createTemperatureChart();
+                } else {
+                    // ถ้าเลือก time range อื่น ให้ trigger dropdown change
+                    const dropdown = document.getElementById('tempTimePeriod');
+                    if (dropdown.value !== '') {
+                        onTempTimePeriodChange();
+                    }
+                }
+            }
+        }
+
+        // Change current time range
+        function changeCurrentTimeRange(hours) {
+            currentTimeRange = hours;
+            
+            // Update button states
+            document.querySelectorAll('#currentChartContainer .time-range-btn').forEach(btn => {
+                if (parseInt(btn.getAttribute('data-range')) === hours) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // อัพเดท dropdown
+            updateTimePeriodDropdown('currentTimePeriod', hours);
+            
+            if (document.getElementById('currentChartContainer').classList.contains('active')) {
+                // ถ้าเลือก 24h ให้สร้าง chart ทันที
+                if (hours === 24) {
+                    createCurrentChart();
+                } else {
+                    // ถ้าเลือก time range อื่น ให้ trigger dropdown change
+                    const dropdown = document.getElementById('currentTimePeriod');
+                    if (dropdown.value !== '') {
+                        onCurrentTimePeriodChange();
+                    }
+                }
+            }
+        }
+
+        // Reset temperature chart zoom
+        function resetTempZoom() {
+            if (temperatureChart) {
+                temperatureChart.resetZoom();
+            }
+        }
+
+        // Reset current chart zoom
+        function resetCurrentZoom() {
+            if (currentChart) {
+                currentChart.resetZoom();
+            }
+        }
+
+        // Export to Excel - Open Modal
+        function exportExcel() {
+            const deviceName = document.getElementById('deviceSelect').value;
+            if (!deviceName) {
+                alert('Please select a device first');
+                return;
+            }
+
+            // Set default values for date-time inputs (last 1 day to now)
+            const now = new Date();
+            const oneDayAgo = new Date(now.getTime() - (1 * 24 * 60 * 60 * 1000));
+            
+            // Format for datetime-local input (YYYY-MM-DDTHH:MM)
+            const formatDateTime = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                return `${year}-${month}-${day}T${hours}:${minutes}`;
+            };
+
+            document.getElementById('exportStartDateTime').value = formatDateTime(oneDayAgo);
+            document.getElementById('exportEndDateTime').value = formatDateTime(now);
+
+            // Show modal
+            document.getElementById('exportModal').style.display = 'block';
+        }
+
+        function closeExportModal() {
+            document.getElementById('exportModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('exportModal');
+            if (event.target === modal) {
+                closeExportModal();
+            }
+        }
+
+        async function confirmExport() {
+            const startDateTime = document.getElementById('exportStartDateTime').value;
+            const endDateTime = document.getElementById('exportEndDateTime').value;
+            const deviceName = document.getElementById('deviceSelect').value;
+
+            if (!startDateTime || !endDateTime) {
+                alert('Please select both start and end date/time');
+                return;
+            }
+
+            const startDate = new Date(startDateTime);
+            const endDate = new Date(endDateTime);
+
+            if (startDate >= endDate) {
+                alert('Start date/time must be before end date/time');
+                return;
+            }
+
+            // Show loading
+            const exportBtn = document.querySelector('.export-btn-primary');
+            const originalText = exportBtn.textContent;
+            exportBtn.textContent = 'Loading...';
+            exportBtn.disabled = true;
+
+            try {
+                // Fetch data from backend for the date range
+                const response = await fetch('http://localhost:2052/api/data-logs/export', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        device_name: deviceName,
+                        start_time: startDate.toISOString(),
+                        end_time: endDate.toISOString()
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch data');
+                }
+
+                const data = await response.json();
+
+                if (data.length === 0) {
+                    alert('No data found for the selected date/time range');
+                    exportBtn.textContent = originalText;
+                    exportBtn.disabled = false;
+                    return;
+                }
+
+                // ตรวจสอบ device type
+                const isJsonDevice = data.length > 0 && (data[0].temp_r !== undefined);
+
+                // Prepare data for Excel
+                const exportData = data.map(row => {
+                    const timestamp = new Date(row.time_stamp);
+                    
+                    // Convert to Bangkok timezone and format as 24-hour
+                    const bangkokTime = new Date(timestamp.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+                    const year = bangkokTime.getFullYear();
+                    const month = String(bangkokTime.getMonth() + 1).padStart(2, '0');
+                    const day = String(bangkokTime.getDate()).padStart(2, '0');
+                    const hour = String(bangkokTime.getHours()).padStart(2, '0');
+                    const minute = String(bangkokTime.getMinutes()).padStart(2, '0');
+                    const second = String(bangkokTime.getSeconds()).padStart(2, '0');
+                    const dateTimeStr = `${day}/${month}/${year} ${hour}:${minute}:${second}`;
+                    
+                    if (isJsonDevice) {
+                        // JSON device format
+                        const alarms = [];
+                        if (row.alm_ol) alarms.push('OL');
+                        if (row.alm_pl) alarms.push('PL');
+                        if (row.alm_lp) alarms.push('LP');
+                        if (row.alm_hp) alarms.push('HP');
+                        
+                        return {
+                            'Date Time': dateTimeStr,
+                            'Room Temp (°C)': parseFloat(row.temp_r || 0).toFixed(1),
+                            'Coil Temp (°C)': parseFloat(row.temp_c || 0).toFixed(1),
+                            'Setpoint (°C)': parseFloat(row.temp_sp || 0).toFixed(1),
+                            'Main R (A)': parseFloat(row.cur_m_r || 0).toFixed(1),
+                            'Main Y (A)': parseFloat(row.cur_m_y || 0).toFixed(1),
+                            'Main B (A)': parseFloat(row.cur_m_b || 0).toFixed(1),
+                            'Fan (A)': parseFloat(row.cur_f || 0).toFixed(1),
+                            'Heater (A)': parseFloat(row.cur_h || 0).toFixed(1),
+                            'Comp R (A)': parseFloat(row.cur_cp_r || 0).toFixed(1),
+                            'Comp Y (A)': parseFloat(row.cur_cp_y || 0).toFixed(1),
+                            'Comp B (A)': parseFloat(row.cur_cp_b || 0).toFixed(1),
+                            'Comp Status': row.stat_cp ? 'ON' : 'OFF',
+                            'Fan Status': row.stat_f ? 'ON' : 'OFF',
+                            'Heater Status': row.stat_h ? 'ON' : 'OFF',
+                            'Alarms': alarms.length > 0 ? alarms.join(', ') : '-'
+                        };
+                    } else {
+                        // Original device format
+                        const modeValue = parseInt(row.mode || 0);
+                        const modeText = modeValue === 1 ? 'Defrost' : modeValue === 2 ? 'Drip' : '';
+                        
+                        return {
+                            'Date Time': dateTimeStr,
+                            'Room Temp (°C)': parseFloat(row.room_temp || 0).toFixed(1),
+                            'Coil Temp (°C)': parseFloat(row.coil_temp || 0).toFixed(1),
+                            'Setpoint (°C)': parseFloat(row.set_temp || 0).toFixed(1),
+                            'Comp R (A)': parseFloat(row.comp_r || 0).toFixed(1),
+                            'Comp Y (A)': parseFloat(row.comp_y || 0).toFixed(1),
+                            'Comp B (A)': parseFloat(row.comp_b || 0).toFixed(1),
+                            'Mode': modeText
+                        };
+                    }
+                });
+
+                // Create workbook and worksheet
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.json_to_sheet(exportData);
+
+                // Add worksheet to workbook
+                XLSX.utils.book_append_sheet(wb, ws, 'Data');
+
+                // Generate filename
+                const startStr = startDate.toISOString().substring(0, 10);
+                const endStr = endDate.toISOString().substring(0, 10);
+                const filename = `${deviceName}_${startStr}_to_${endStr}.xlsx`;
+
+                // Save file
+                XLSX.writeFile(wb, filename);
+
+                // Close modal
+                closeExportModal();
+
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('Error exporting data. Please try again.');
+            } finally {
+                exportBtn.textContent = originalText;
+                exportBtn.disabled = false;
+            }
+        }
+
+        // โหลด devices เมื่อเปิดหน้า
+        window.addEventListener('DOMContentLoaded', () => {
+            // โหลด saved date
+            const savedDate = localStorage.getItem('selectedDate');
+            if (savedDate) {
+                document.getElementById('dateInput').value = savedDate;
+            }
+            
+            // โหลด saved page size
+            const savedPageSize = localStorage.getItem('pageSize');
+            if (savedPageSize) {
+                pageSize = parseInt(savedPageSize);
+                document.getElementById('pageSizeSelect').value = savedPageSize;
+            }
+            
+            // โหลด saved view state ทันทีก่อนแสดงหน้า
+            const savedViewState = localStorage.getItem('viewState');
+            const tableBtn = document.querySelector('.view-btn[data-view="table"]');
+            
+            if (savedViewState) {
+                try {
+                    const viewState = JSON.parse(savedViewState);
+                    
+                    // Restore view ทันทีโดยไม่รอ
+                    if (viewState.showTempChart || viewState.showCurrentChart) {
+                        // ซ่อน table
+                        document.getElementById('tableViewContainer').classList.add('hidden');
+                        
+                        if (viewState.showTempChart) {
+                            const tempBtn = document.querySelector('.view-btn[data-view="temp"]');
+                            if (tempBtn) {
+                                tempBtn.classList.add('active');
+                                document.getElementById('tempChartContainer').classList.add('active');
+                                if (viewState.tempFirst) {
+                                    document.getElementById('tempChartContainer').classList.add('first');
+                                }
+                            }
+                        }
+                        
+                        if (viewState.showCurrentChart) {
+                            const currentBtn = document.querySelector('.view-btn[data-view="current"]');
+                            if (currentBtn) {
+                                currentBtn.classList.add('active');
+                                document.getElementById('currentChartContainer').classList.add('active');
+                                if (viewState.currentFirst) {
+                                    document.getElementById('currentChartContainer').classList.add('first');
+                                }
+                            }
+                        }
+                        
+                        // ปรับความสูงของ chart
+                        updateChartHeights();
+                    } else {
+                        // แสดง table
+                        if (tableBtn) tableBtn.classList.add('active');
+                    }
+                } catch (error) {
+                    console.error('Error restoring view state:', error);
+                    // ถ้า error ให้ใช้ค่าเริ่มต้น: แสดง table
+                    if (tableBtn) tableBtn.classList.add('active');
+                }
+            } else {
+                // ถ้าไม่มี saved state ให้แสดง table เป็นค่าเริ่มต้น
+                if (tableBtn) tableBtn.classList.add('active');
+            }
+            
+            // โหลด devices และ auto-load ถ้ามีการเลือกไว้
+            loadDevices();
+        });
+    </script>
+    </main>
+</body>
+</html>

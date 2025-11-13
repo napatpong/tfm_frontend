@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .debug-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header-section h1 {
+            margin: 0;
+            color: #333;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn-control {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-view {
+            background: #2196f3;
+            color: white;
+        }
+
+        .btn-view.active {
+            background: #1976d2;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .btn-clear {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-pause {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-resume {
+            background: #4caf50;
+            color: white;
+        }
+
+        .devices-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 1200px;
+        }
+
+        .device-debug-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: #1976d2;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .status-badge.online {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status-badge.offline {
+            background: #f44336;
+            color: white;
+        }
+
+        .topic-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-family: monospace;
+        }
+
+        .card-body {
+            padding: 15px;
+        }
+
+        .message-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .message-count {
+            font-weight: 500;
+            color: #1976d2;
+        }
+
+        .messages-container {
+            background: #f5f5f5;
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        .message-item {
+            background: white;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            border-left: 3px solid #1976d2;
+            font-family: monospace;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .message-time {
+            color: #666;
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+
+        .message-range {
+            color: #1976d2;
+            font-weight: 600;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            min-width: 100px;
+        }
+
+        .message-data {
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        .values-table-container {
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        .values-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            font-family: monospace;
+        }
+
+        .values-table th {
+            background: #1976d2;
+            color: white;
+            padding: 8px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .values-table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .values-table tr:hover {
+            background: #f5f5f5;
+        }
+
+        .values-table tr.has-value {
+            background: white;
+        }
+
+        .values-table tr.empty-value {
+            opacity: 0.5;
+        }
+
+        .values-table tr.updated {
+            background: #e3f2fd;
+        }
+
+        .param-cell {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .hexdata-cell {
+            color: #666;
+            font-family: 'Courier New', monospace;
+        }
+
+        .value-cell-signed {
+            color: #1976d2;
+            font-weight: 600;
+        }
+
+        .unit-cell {
+            color: #666;
+            font-style: italic;
+        }
+
+        .no-messages {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .status-indicator.connected {
+            background: #4caf50;
+        }
+
+        .status-indicator.disconnected {
+            background: #f44336;
+        }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #1976d2;
+            text-decoration: none;
+            margin-bottom: 20px;
+        }
+
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+
+        .connection-status {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <a href="/" class="nav-link">
+            <span class="material-icons">arrow_back</span>
+            Back to Home
+        </a>
+
+        <div class="header-section">
+            <h1>MQTT Debug Monitor</h1>
+        </div>
+
+        <div class="connection-status">
+            <span class="status-indicator" id="mqttIndicator"></span>
+            <span id="mqttStatusText">Connecting...</span>
+        </div>
+
+        <div class="controls">
+            <button class="btn-control btn-view active" id="mqttViewBtn">
+                <span class="material-icons" style="font-size: 18px;">code</span>
+                MQTT
+            </button>
+            <button class="btn-control btn-view" id="dataViewBtn">
+                <span class="material-icons" style="font-size: 18px;">table_chart</span>
+                DATA
+            </button>
+            <div style="flex: 1;"></div>
+            <button class="btn-control btn-pause" id="pauseBtn">
+                <span class="material-icons" style="font-size: 18px;">pause</span>
+                Pause
+            </button>
+            <button class="btn-control btn-resume" id="resumeBtn" style="display: none;">
+                <span class="material-icons" style="font-size: 18px;">play_arrow</span>
+                Resume
+            </button>
+            <button class="btn-control btn-clear" id="clearBtn">
+                <span class="material-icons" style="font-size: 18px;">clear_all</span>
+                Clear All
+            </button>
+        </div>
+
+        <div class="devices-grid">
+            <% devices.forEach(device => { %>
+                <div class="device-debug-card" id="card-<%= device.id %>">
+                    <div class="card-header">
+                        <h3>
+                            <%= device.name %>
+                            <span class="status-badge offline" id="status-<%= device.id %>">OFFLINE</span>
+                        </h3>
+                        <span class="topic-badge">bifrost_pub_<%= device.macAddress %></span>
+                    </div>
+                    <div class="card-body">
+                        <div class="message-info">
+                            <span>Messages: <span class="message-count" id="count-<%= device.id %>">0</span></span>
+                            <span id="lastUpdate-<%= device.id %>">-</span>
+                        </div>
+                        <div class="messages-container mqtt-view" id="messages-<%= device.id %>">
+                            <div class="no-messages">Waiting for messages...</div>
+                        </div>
+                        <div class="messages-container data-view" id="data-<%= device.id %>" style="display: none;">
+                            <div class="no-messages">Waiting for data...</div>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+
+        <% if (devices.length === 0) { %>
+            <div style="text-align: center; padding: 60px; color: #666;">
+                <span class="material-icons" style="font-size: 64px; color: #ccc;">devices_other</span>
+                <h2>No Devices Found</h2>
+                <p>Add devices to start monitoring MQTT messages.</p>
+            </div>
+        <% } %>
+    </div>
+
+    <script>
+        const devices = <%- JSON.stringify(devices) %>;
+        const messageCounts = {};
+        const groupedMessages = {}; // เก็บข้อมูลจัดกลุ่มตาม MAC:type:range
+        const consolidatedData = {}; // เก็บข้อมูลทั้งหมด 63 ค่า
+        const lastMessageTime = {}; // เก็บเวลาที่ได้รับข้อความล่าสุด
+        let isPaused = false;
+        let ws = null;
+        let currentView = 'mqtt'; // 'mqtt' or 'data'
+        let statusCheckInterval = null;
+
+        // Initialize message counts and consolidated data
+        devices.forEach(device => {
+            messageCounts[device.macAddress] = 0;
+            lastMessageTime[device.macAddress] = null;
+            consolidatedData[device.macAddress] = {
+                values: {},
+                lastUpdate: {},
+                topic: ''
+            };
+        });
+
+        // Parse message function (same as App.jsx)
+        function parseMessage(message) {
+            try {
+                // MAC address format XX:XX:XX:XX:XX:XX
+                const macRegex = /^([0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}):/i;
+                const macMatch = message.match(macRegex);
+                
+                if (!macMatch) {
+                    console.error('No MAC address found in message:', message);
+                    return null;
+                }
+                
+                const mac = macMatch[1];
+                const remainingMessage = message.substring(mac.length + 1);
+                const parts = remainingMessage.split(':');
+                
+                if (parts.length >= 1) {
+                    const dataType = parts[0];
+                    
+                    // กรณี DATA:start:end:value1:value2:...
+                    if (dataType === 'DATA' && parts.length >= 3) {
+                        const dataStart = parseInt(parts[1]);
+                        const dataEnd = parseInt(parts[2]);
+                        const dataCount = dataEnd - dataStart + 1;
+                        const dataValues = parts.slice(3, 3 + dataCount);
+                        
+                        return {
+                            mac: mac,
+                            type: 'DATA',
+                            range: `${dataStart}-${dataEnd}`,
+                            data: dataValues.map((value, index) => ({
+                                label: `data${dataStart + index}`,
+                                value: value
+                            }))
+                        };
+                    }
+                    
+                    // กรณี COIL_DATA หรือรูปแบบอื่นๆ
+                    if (parts.length >= 2) {
+                        const values = parts.slice(1);
+                        return {
+                            mac: mac,
+                            type: dataType,
+                            range: values.length > 0 ? values[0] : '0',
+                            data: values.map((value, index) => ({
+                                label: `value${index}`,
+                                value: value
+                            }))
+                        };
+                    }
+                }
+            } catch (error) {
+                console.error('Parse error:', error);
+            }
+            return null;
+        }
+
+        // Parameter names mapping
+        const parameterNames = {0:"Room temp",1:"Coil temp",2:"Relay Status",3:"Fault Status",4:"Digital Input Status",5:"System Status",6:"Comp run Hr",7:"Comp R Phase CT",8:"Comp Y Phase CT",9:"Comp B Phase CT",10:"P2 (Maximum Setpoint)",11:"P3 (Minimum Setpoint)",12:"P4",13:"P5",14:"P6",15:"P7",16:"P8 (DEF Cycle)",17:"P9",18:"P10",19:"P11",20:"P12",21:"P13 (Set Stop DEF End Temp.)",22:"DI-D",23:"OPS",24:"QFD",25:"CND6",26:"CND7",27:"L1",28:"L2",29:"L3",30:"L4",31:"L5",32:"L7",33:"L8",34:"BUZ",35:"AL",36:"ADT",37:"ADD",38:"THD",39:"C-UL",40:"C-OL",41:"C2",42:"D0",43:"D1",44:"D2",45:"D3",46:"D4",47:"E1",48:"T-ON",49:"T-OFF",50:"E7",51:"E8",52:"LD",53:"LSD",54:"PDN",55:"CCRH",56:"LOCK",57:"PO",58:"PDIS",59:"FS",60:"Setpoint",61:"QFS",62:"Reserved"};
+        
+        const parameterUnits = {0:"°C",1:"°C",2:"-",3:"-",4:"-",5:"-",6:"hr(s)",7:"A.",8:"A.",9:"A.",10:"°C",11:"°C",12:"°C",13:"°C",14:"min(s)",15:"min(s)",16:"hr(s)",17:"min(s)",18:"-",19:"min(s)",20:"-",21:"°C",22:"-",23:"-",24:"hr(s)",25:"sec.",26:"-",27:"°C",28:"min(s)",29:"-",30:"°C",31:"°C",32:"-",33:"-",34:"-",35:"-",36:"min(s)",37:"sec.",38:"sec.",39:"A.",40:"A.",41:"sec.",42:"-",43:"-",44:"Volts",45:"sec.",46:"-",47:"-",48:"min(s)",49:"min(s)",50:"-",51:"min(s)",52:"min(s)",53:"-",54:"-",55:"-",56:"-",57:"-",58:"-",59:"-",60:"°C",61:"°C",62:"-"};
+        
+        const parameterScales = {0:10,1:10,7:10,8:10,9:10,10:10,11:10,12:10,13:10,21:10,27:10,30:10,31:10,39:10,40:10,60:10,61:10};
+
+        // Convert hex to signed 16-bit integer
+        function hexToSigned16(hexString) {
+            if (!hexString || hexString === '-') return '-';
+            try {
+                const cleanHex = hexString.replace(/^0x/i, '').slice(-4);
+                let value = parseInt(cleanHex, 16);
+                if (isNaN(value)) return '-';
+                if (value & 0x8000) value = value - 0x10000;
+                return value;
+            } catch (error) {
+                return '-';
+            }
+        }
+
+        // Calculate scaled value
+        function calculateScaledValue(signedValue, scale) {
+            if (signedValue === '-' || signedValue === null || signedValue === undefined) return '-';
+            if (scale === 10) return (signedValue / 10).toFixed(1);
+            return signedValue;
+        }
+
+        // Function to update device status
+        function updateDeviceStatus(deviceId, macAddress, isOnline) {
+            const statusBadge = document.getElementById(`status-${deviceId}`);
+            if (statusBadge) {
+                if (isOnline) {
+                    statusBadge.textContent = 'ONLINE';
+                    statusBadge.className = 'status-badge online';
+                } else {
+                    statusBadge.textContent = 'OFFLINE';
+                    statusBadge.className = 'status-badge offline';
+                }
+            }
+        }
+
+        // Function to check all device statuses
+        function checkDeviceStatuses() {
+            const now = Date.now();
+            const timeout = 60000; // 60 seconds
+
+            devices.forEach(device => {
+                if (!device.macAddress) {
+                    updateDeviceStatus(device.id, null, false);
+                    return;
+                }
+                
+                const lastTime = lastMessageTime[device.macAddress];
+                if (lastTime && (now - lastTime) < timeout) {
+                    updateDeviceStatus(device.id, device.macAddress, true);
+                } else {
+                    updateDeviceStatus(device.id, device.macAddress, false);
+                }
+            });
+        }
+
+        // Connect to backend WebSocket
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:2052');
+
+            ws.onopen = () => {
+                console.log('Connected to backend WebSocket');
+                document.getElementById('mqttIndicator').className = 'status-indicator connected';
+                document.getElementById('mqttStatusText').textContent = 'Connected - Monitoring MQTT messages (mqttManager auto-subscribe)';
+            };
+
+            ws.onmessage = (event) => {
+                console.log('Received WebSocket message:', event.data);
+                
+                if (isPaused) return;
+
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('Parsed data:', data);
+                    
+                    // Handle MQTT messages
+                    if (data.type === 'mqtt_message' && data.data) {
+                        console.log('MQTT message received:', data.data);
+                        const { topic, message, timestamp } = data.data;
+                        
+                        // Parse message to get MAC address (works for both old and new format)
+                        const parsedData = parseMessage(message);
+                        console.log('Parsed message data:', parsedData);
+                        
+                        if (!parsedData || !parsedData.mac) {
+                            console.log('No MAC found in message');
+                            return;
+                        }
+                        
+                        const macAddress = parsedData.mac;
+                        
+                        // Find device by MAC address
+                        const device = devices.find(d => d.macAddress === macAddress);
+                        if (!device) {
+                            console.log('Device not found for MAC:', macAddress);
+                            return;
+                        }
+                        
+                        if (parsedData) {
+                            // Create key: MAC###type###range (use ### to avoid : in MAC)
+                            const key = `${parsedData.mac}###${parsedData.type}###${parsedData.range}`;
+                            console.log('Creating grouped key:', key);
+                            
+                            // Update last message time
+                            lastMessageTime[macAddress] = Date.now();
+                            
+                            // Store in groupedMessages
+                            groupedMessages[key] = {
+                                topic: topic,
+                                message: message,
+                                parsedData: parsedData,
+                                timestamp: timestamp || new Date().toISOString()
+                            };
+
+                            // Update consolidatedData for DATA view
+                            if (parsedData.type === 'DATA') {
+                                const currentData = consolidatedData[macAddress];
+                                currentData.topic = topic;
+                                parsedData.data.forEach(item => {
+                                    const idx = parseInt(item.label.replace('data', ''));
+                                    currentData.values[idx] = item.value;
+                                    currentData.lastUpdate[idx] = new Date().toISOString();
+                                });
+                                currentData.timestamp = new Date().toISOString();
+                            }
+
+                            // Update message count
+                            messageCounts[macAddress]++;
+                            document.getElementById(`count-${device.id}`).textContent = messageCounts[macAddress];
+
+                            // Update last update time
+                            const timeStr = new Date(timestamp || Date.now()).toLocaleTimeString('th-TH');
+                            document.getElementById(`lastUpdate-${device.id}`).textContent = timeStr;
+
+                            // Update device status to online
+                            updateDeviceStatus(device.id, macAddress, true);
+
+                            // Update display based on current view
+                            if (currentView === 'mqtt') {
+                                updateMqttDisplay(device.id, macAddress);
+                            } else {
+                                updateDataDisplay(device.id, macAddress);
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error parsing message:', error);
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                document.getElementById('mqttIndicator').className = 'status-indicator disconnected';
+                document.getElementById('mqttStatusText').textContent = 'Connection error';
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket disconnected');
+                document.getElementById('mqttIndicator').className = 'status-indicator disconnected';
+                document.getElementById('mqttStatusText').textContent = 'Disconnected - Reconnecting...';
+                
+                // Reconnect after 3 seconds
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+
+        // Function to update MQTT view display
+        function updateMqttDisplay(deviceId, macAddress) {
+            const messagesContainer = document.getElementById(`messages-${deviceId}`);
+            
+            // Get all messages for this MAC address
+            const deviceMessages = Object.entries(groupedMessages)
+                .filter(([key, msg]) => msg.parsedData.mac === macAddress)
+                .sort(([keyA], [keyB]) => {
+                    const [macA, typeA, rangeA] = keyA.split('###');
+                    const [macB, typeB, rangeB] = keyB.split('###');
+                    if (typeA !== typeB) return typeA.localeCompare(typeB);
+                    return rangeA.localeCompare(rangeB);
+                });
+
+            if (deviceMessages.length === 0) return;
+
+            // Remove "no messages" placeholder
+            const noMessages = messagesContainer.querySelector('.no-messages');
+            if (noMessages) {
+                noMessages.remove();
+            }
+
+            // Clear and rebuild all messages
+            messagesContainer.innerHTML = '';
+
+            // Add each grouped message as a separate row
+            deviceMessages.forEach(([key, msg]) => {
+                const messageEl = document.createElement('div');
+                messageEl.className = 'message-item';
+                messageEl.dataset.key = key;
+                
+                const timeStr = new Date(msg.timestamp).toLocaleTimeString('th-TH');
+                const parsedData = msg.parsedData;
+                
+                messageEl.innerHTML = `
+                    <div class="message-time">${timeStr}</div>
+                    <div class="message-range">${parsedData.type} [${parsedData.range}]</div>
+                    <div class="message-data">${msg.message}</div>
+                `;
+                
+                messagesContainer.appendChild(messageEl);
+            });
+        }
+
+        // Function to update DATA view display
+        function updateDataDisplay(deviceId, macAddress) {
+            const dataContainer = document.getElementById(`data-${deviceId}`);
+            const data = consolidatedData[macAddress];
+            
+            if (!data || Object.keys(data.values).length === 0) return;
+
+            // Remove "no messages" placeholder
+            const noMessages = dataContainer.querySelector('.no-messages');
+            if (noMessages) {
+                noMessages.remove();
+            }
+
+            // Create table if not exists
+            let tableContainer = dataContainer.querySelector('.values-table-container');
+            if (!tableContainer) {
+                tableContainer = document.createElement('div');
+                tableContainer.className = 'values-table-container';
+                dataContainer.innerHTML = '';
+                dataContainer.appendChild(tableContainer);
+            }
+
+            // Build table
+            let tableHTML = `
+                <table class="values-table">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Hexdata</th>
+                            <th>Value</th>
+                            <th>Unit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            for (let idx = 0; idx < 63; idx++) {
+                const value = data.values[idx];
+                const lastUpdate = data.lastUpdate[idx];
+                const isRecent = lastUpdate && (new Date() - new Date(lastUpdate) < 2000);
+                const signedValue = hexToSigned16(value);
+                const scale = parameterScales[idx];
+                const scaledValue = calculateScaledValue(signedValue, scale);
+                const paramName = parameterNames[idx] || `data${idx}`;
+                const unit = parameterUnits[idx] || '-';
+                const rowClass = `${value ? 'has-value' : 'empty-value'} ${isRecent ? 'updated' : ''}`;
+                
+                tableHTML += `
+                    <tr class="${rowClass}">
+                        <td class="param-cell">${paramName}</td>
+                        <td class="hexdata-cell">${value || '-'}</td>
+                        <td class="value-cell-signed">${scaledValue}</td>
+                        <td class="unit-cell">${unit}</td>
+                    </tr>
+                `;
+            }
+
+            tableHTML += '</tbody></table>';
+            tableContainer.innerHTML = tableHTML;
+        }
+
+        // Function to update device display (backwards compatibility)
+        function updateDeviceDisplay(deviceId, macAddress) {
+            if (currentView === 'mqtt') {
+                updateMqttDisplay(deviceId, macAddress);
+            } else {
+                updateDataDisplay(deviceId, macAddress);
+            }
+        }
+
+        // Initialize connection
+        connectWebSocket();
+
+        // Start status check interval (check every 5 seconds)
+        statusCheckInterval = setInterval(checkDeviceStatuses, 5000);
+
+        // Initial status check
+        checkDeviceStatuses();
+
+        // View switching
+        document.getElementById('mqttViewBtn').addEventListener('click', () => {
+            currentView = 'mqtt';
+            document.getElementById('mqttViewBtn').classList.add('active');
+            document.getElementById('dataViewBtn').classList.remove('active');
+            
+            // Toggle visibility
+            devices.forEach(device => {
+                document.getElementById(`messages-${device.id}`).style.display = 'block';
+                document.getElementById(`data-${device.id}`).style.display = 'none';
+            });
+        });
+
+        document.getElementById('dataViewBtn').addEventListener('click', () => {
+            currentView = 'data';
+            document.getElementById('dataViewBtn').classList.add('active');
+            document.getElementById('mqttViewBtn').classList.remove('active');
+            
+            // Toggle visibility and update data view
+            devices.forEach(device => {
+                document.getElementById(`messages-${device.id}`).style.display = 'none';
+                document.getElementById(`data-${device.id}`).style.display = 'block';
+                updateDataDisplay(device.id, device.macAddress);
+            });
+        });
+
+        // Pause/Resume functionality
+        document.getElementById('pauseBtn').addEventListener('click', () => {
+            isPaused = true;
+            document.getElementById('pauseBtn').style.display = 'none';
+            document.getElementById('resumeBtn').style.display = 'flex';
+        });
+
+        document.getElementById('resumeBtn').addEventListener('click', () => {
+            isPaused = false;
+            document.getElementById('pauseBtn').style.display = 'flex';
+            document.getElementById('resumeBtn').style.display = 'none';
+        });
+
+        // Clear all messages
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            // Clear groupedMessages
+            Object.keys(groupedMessages).forEach(key => delete groupedMessages[key]);
+            
+            // Clear last message times
+            devices.forEach(device => {
+                lastMessageTime[device.macAddress] = null;
+            });
+            
+            devices.forEach(device => {
+                const messagesContainer = document.getElementById(`messages-${device.id}`);
+                messagesContainer.innerHTML = '<div class="no-messages">Waiting for messages...</div>';
+                
+                const dataContainer = document.getElementById(`data-${device.id}`);
+                dataContainer.innerHTML = '<div class="no-messages">Waiting for data...</div>';
+                
+                messageCounts[device.macAddress] = 0;
+                document.getElementById(`count-${device.id}`).textContent = '0';
+                document.getElementById(`lastUpdate-${device.id}`).textContent = '-';
+                
+                // Reset status to offline
+                updateDeviceStatus(device.id, device.macAddress, false);
+            });
+        });
+    </script>
+</body>
+</html>

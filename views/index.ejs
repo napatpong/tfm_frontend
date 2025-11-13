@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mui/material@5.14.0/dist/mui-material.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1><%= title %></h1>
+        <div class="devices">
+            <% if (devices && devices.length > 0) { %>
+                <% devices.forEach(device => { %>
+                    <div class="device-card">
+                        <h2><%= device.name %></h2>
+                        <p>Status: <%= device.status %></p>
+                        <p>Last Update: <%= device.lastUpdate %></p>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <p>No devices found</p>
+            <% } %>
+        </div>
+    </div>
+    <script src="/js/app.js"></script>
+</body>
+</html>

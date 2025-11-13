@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .form-container {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        .form-card h1 {
+            margin: 0 0 30px 0;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: 'Roboto', sans-serif;
+            box-sizing: border-box;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #1976d2;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .btn-submit,
+        .btn-cancel {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-submit {
+            background: #1976d2;
+            color: white;
+        }
+
+        .btn-submit:hover {
+            background: #1565c0;
+        }
+
+        .btn-cancel {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .btn-cancel:hover {
+            background: #e0e0e0;
+        }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #1976d2;
+            text-decoration: none;
+            margin-bottom: 20px;
+        }
+
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+
+        .required {
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <a href="/manage/devices" class="nav-link">
+            <span class="material-icons">arrow_back</span>
+            Back to Devices
+        </a>
+
+        <div class="form-card">
+            <h1><%= title %></h1>
+            
+            <form action="<%= action %>" method="POST" id="deviceForm" onsubmit="console.log('Form submitting to:', this.action, 'with data:', new FormData(this)); return true;">
+                <div class="form-group">
+                    <label for="deviceId">Device ID</label>
+                    <input 
+                        type="text" 
+                        id="deviceId" 
+                        name="deviceId" 
+                        value="<%= device ? (device.deviceId || '') : '' %>" 
+                        placeholder="e.g., TFM-001, CTRL-01"
+                    >
+                    <small style="color: #666;">Optional - Custom device identifier</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="name">Device Name <span class="required">*</span></label>
+                    <input 
+                        type="text" 
+                        id="name" 
+                        name="name" 
+                        value="<%= device ? device.name : '' %>" 
+                        required
+                        placeholder="e.g., Freezer Unit 1"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="macAddress">MAC Address</label>
+                    <input 
+                        type="text" 
+                        id="macAddress" 
+                        name="macAddress" 
+                        value="<%= device ? (device.macAddress || '') : '' %>" 
+                        placeholder="e.g., CC:7B:5C:A7:F8:78"
+                        pattern="[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}"
+                        title="Format: XX:XX:XX:XX:XX:XX (hex values)"
+                        <%= device ? 'readonly' : '' %>
+                    >
+                    <small style="color: #666;">Optional - Unique MAC address (format: XX:XX:XX:XX:XX:XX)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="type">Device Type</label>
+                    <select id="type" name="type">
+                        <option value="">-- Select Type --</option>
+                        <option value="cold_room" <%= device && device.type === 'cold_room' ? 'selected' : '' %>>Cold Room</option>
+                        <option value="cooling_unit" <%= device && device.type === 'cooling_unit' ? 'selected' : '' %>>Cooling Unit</option>
+                        <option value="controller" <%= device && device.type === 'controller' ? 'selected' : '' %>>Controller</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="brokerId">MQTT Broker</label>
+                    <select id="brokerId" name="brokerId">
+                        <option value="">-- No Broker --</option>
+                        <% if (brokers && brokers.length > 0) { %>
+                            <% brokers.forEach(broker => { %>
+                                <option value="<%= broker.id %>" <%= device && device.brokerId === broker.id ? 'selected' : '' %>>
+                                    <%= broker.name %> (<%= broker.protocol %>://<%= broker.broker %>:<%= broker.port %>)
+                                </option>
+                            <% }); %>
+                        <% } %>
+                    </select>
+                    <small style="color: #666;">Optional - Select MQTT broker for this device. <a href="/manage/brokers" target="_blank" style="color: #1976d2;">Manage Brokers</a></small>
+                </div>
+
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input 
+                        type="text" 
+                        id="location" 
+                        name="location" 
+                        value="<%= device ? (device.location || '') : '' %>"
+                        placeholder="e.g., Warehouse A, Section 2"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea 
+                        id="description" 
+                        name="description"
+                        placeholder="Optional description for this device"
+                    ><%= device ? (device.description || '') : '' %></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">
+                        <%= device ? 'Update Device' : 'Add Device' %>
+                    </button>
+                    <a href="/manage/devices" class="btn-cancel">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

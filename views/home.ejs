@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background: #1a1a1a;
+        }
+
+        body {
+            color: #e8e8e8;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        /* Layout with Sidebar */
+        body {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Glassmorphism Sidebar Menu */
+        .app-nav {
+            width: 250px;
+            background: rgba(45, 45, 45, 0.7);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+
+        .nav-header {
+            background: rgba(36, 36, 36, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 15px;
+            gap: 12px;
+        }
+
+        .nav-header .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+        }
+
+        .nav-header .logo img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .nav-header .logo .material-icons {
+            font-size: 48px;
+            color: white;
+        }
+
+        .nav-header h1 {
+            color: #e0e0e0;
+            text-align: center;
+            font-size: 1.2rem;
+            margin: 0;
+        }
+
+        .connection-status {
+            background: rgba(36, 36, 36, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+        }
+
+        .status-label {
+            color: #a0a0a0;
+        }
+
+        .status-value {
+            color: #e0e0e0;
+        }
+
+        .status-value.connected {
+            color: #4caf50;
+        }
+
+        .status-value.disconnected {
+            color: #f44336;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #1a1a1a;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(45, 45, 45, 0.6);
+            backdrop-filter: blur(15px);
+            color: #e0e0e0;
+            margin-bottom: 40px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            color: #b0b0b0;
+        }
+
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .dashboard-card {
+            background: rgba(45, 45, 45, 0.6);
+            backdrop-filter: blur(15px);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            background: rgba(80, 80, 80, 0.5);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+        }
+
+        .dashboard-card .material-icons {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .dashboard-card:nth-child(1) .material-icons {
+            color: #64b5f6;
+        }
+
+        .dashboard-card:nth-child(2) .material-icons {
+            color: #81c784;
+        }
+
+        .dashboard-card:nth-child(3) .material-icons {
+            color: #ffb74d;
+        }
+
+        .dashboard-card h2 {
+            color: #e0e0e0;
+            margin-bottom: 15px;
+        }
+
+        .dashboard-card p {
+            color: #a0a0a0;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background: rgba(64, 64, 64, 0.8);
+            backdrop-filter: blur(10px);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .button:hover {
+            background: rgba(80, 80, 80, 0.8);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .status-section {
+            background: rgba(36, 36, 36, 0.5);
+            backdrop-filter: blur(10px);
+            padding: 40px 20px;
+            margin-top: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .status-card {
+            background: rgba(45, 45, 45, 0.6);
+            backdrop-filter: blur(15px);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-card h3 {
+            color: #e0e0e0;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #b0b0b0;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .status-dot.connected {
+            background-color: #4caf50;
+        }
+
+        .status-dot.disconnected {
+            background-color: #f44336;
+        }
+
+        .nav-button {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid transparent;
+            color: #e0e0e0;
+            text-decoration: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .nav-button.active {
+            background: linear-gradient(90deg, #2196f3 0%, #1976d2 100%);
+            color: #fff;
+            border-color: #2196f3;
+            box-shadow: 0 2px 8px rgba(33,150,243,0.15);
+            font-weight: 600;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <nav class="app-nav">
+        <div class="nav-header" style="padding: 0; background: none; border-bottom: none;">
+            <div class="logo" style="width: 100%; height: 120px; background: none; box-shadow: none; display: flex; align-items: center; justify-content: center;">
+                <img src="/img/Logo_SealCool_approve-03_0.png" alt="SealCool Logo" style="width: 100%; height: 100%; object-fit: contain; display: block; margin: 0;" />
+            </div>
+        </div>
+        <div class="nav-content">
+                <div class="connection-status">
+                    <div class="status-item">
+                        <span class="status-label">Backend:</span>
+                        <span id="backendStatus" class="status-value <%= backendConnected ? 'connected' : 'disconnected' %>">
+                            <%= backendStatus %>
+                        </span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">MQTT:</span>
+                        <span id="mqttStatus" class="status-value <%= mqttConnected ? 'connected' : 'disconnected' %>">
+                            <%= mqttStatus %>
+                        </span>
+                    </div>
+                </div>
+                <div class="nav-buttons">
+                    <a href="/" class="nav-button <%= activePath === '/' ? 'active' : '' %>">
+                        <span class="material-icons">home</span>
+                        Home
+                    </a>
+                    <a href="/live-monitor" class="nav-button <%= activePath === '/live-monitor' ? 'active' : '' %>">
+                        <span class="material-icons">table_rows</span>
+                        Live Monitor (Table)
+                    </a>
+                    <a href="/live-monitor-cards" class="nav-button <%= activePath === '/live-monitor-cards' ? 'active' : '' %>">
+                        <span class="material-icons">grid_view</span>
+                        Live Monitor (Cards)
+                    </a>
+                    <a href="/manage/devices" class="nav-button <%= activePath === '/manage/devices' ? 'active' : '' %>">
+                        <span class="material-icons">edit</span>
+                        Manage Devices
+                    </a>
+                    <a href="#" class="nav-button <%= activePath === '/manage/brokers' ? 'active' : '' %>" onclick="showBrokersPage(); return false;">
+                        <span class="material-icons">router</span>
+                        Manage Brokers
+                    </a>
+                    <a href="/mqtt-debug" class="nav-button <%= activePath === '/mqtt-debug' ? 'active' : '' %>">
+                        <span class="material-icons">bug_report</span>
+                        MQTT Debug
+                    </a>
+                    <a href="/data-history" class="nav-button <%= activePath === '/data-history' ? 'active' : '' %>">
+                        <span class="material-icons">history</span>
+                        Data History
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <main class="main-content" id="mainContent">
+            <div class="hero" id="homeContent">
+                <h1>Welcome to SealCool Monitor</h1>
+                <p>Monitor and manage your cooling devices in real-time</p>
+                <a href="/live-monitor" class="button">Live Monitor</a>
+            </div>
+
+            <div class="dashboard-cards">
+                <div class="dashboard-card">
+                    <span class="material-icons">monitor</span>
+                    <h2>Live Monitoring</h2>
+                    <p>Monitor all your devices in real-time with temperature tracking and status updates.</p>
+                    <a href="/live-monitor" class="button">Open Monitor</a>
+                </div>
+
+                <div class="dashboard-card">
+                    <span class="material-icons">edit</span>
+                    <h2>Device Management</h2>
+                    <p>Add, edit, or remove devices from your monitoring system.</p>
+                    <a href="/manage/devices" class="button">Manage Devices</a>
+                </div>
+
+                <div class="dashboard-card">
+                    <span class="material-icons">router</span>
+                    <h2>MQTT Brokers</h2>
+                    <p>Configure and manage MQTT brokers for your devices.</p>
+                    <a href="/manage/brokers" class="button">Manage Brokers</a>
+                </div>
+            </div>
+
+            <div class="status-section">
+                <div class="status-container">
+                    <div class="status-grid">
+                        <div class="status-card">
+                            <h3>Backend Status</h3>
+                            <div class="status-indicator">
+                                <div class="status-dot <%= backendConnected ? 'connected' : 'disconnected' %>"></div>
+                                <span><%= backendStatus %></span>
+                            </div>
+                        </div>
+
+                        <div class="status-card">
+                            <h3>MQTT Status</h3>
+                            <div class="status-indicator">
+                                <div class="status-dot <%= mqttConnected ? 'connected' : 'disconnected' %>"></div>
+                                <span><%= mqttStatus %></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="brokersPage" style="display:none;">
+                <div class="container">
+                    <div class="header">
+                        <h1><span class="material-icons" style="vertical-align: middle; margin-right: 10px;">dns</span>MQTT Brokers</h1>
+                        <button class="btn btn-primary" onclick="openAddModal()">
+                            <span class="material-icons">add</span>
+                            เพิ่ม Broker
+                        </button>
+                    </div>
+                    <div id="alert" class="alert"></div>
+                    <div id="brokers-container" class="brokers-grid"></div>
+                    <div class="empty-state" id="empty-state" style="display: none;">
+                        <span class="material-icons">dns</span>
+                        <p>ยังไม่มี MQTT Broker</p>
+                        <p style="margin-top: 10px;">คลิกปุ่ม "เพิ่ม Broker" เพื่อเริ่มต้น</p>
+                    </div>
+                </div>
+                <div id="brokerModal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 id="modalTitle">เพิ่ม Broker</h2>
+                            <button class="close-btn" onclick="closeModal()">&times;</button>
+                        </div>
+                        <form id="brokerForm">
+                            <input type="hidden" id="brokerId" name="id">
+                            <div class="form-group">
+                                <label for="name">ชื่อ Broker *</label>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="protocol">Protocol *</label>
+                                <select id="protocol" name="protocol" required>
+                                    <option value="mqtt">MQTT</option>
+                                    <option value="mqtts">MQTTS (SSL/TLS)</option>
+                                    <option value="ws">WebSocket</option>
+                                    <option value="wss">WebSocket Secure</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="broker">Broker Address *</label>
+                                <input type="text" id="broker" name="broker" placeholder="localhost หรือ mqtt.example.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="port">Port *</label>
+                                <input type="number" id="port" name="port" placeholder="1883" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="username">Username (ถ้ามี)</label>
+                                <input type="text" id="username" name="username">
+                            </div>
+                            <div class="form-group">
+                                <label for="password">Password (ถ้ามี)</label>
+                                <input type="password" id="password" name="password">
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-secondary" onclick="closeModal()">ยกเลิก</button>
+                                <button type="submit" class="btn btn-success">
+                                    <span class="material-icons">save</span>
+                                    บันทึก
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Socket.IO connection
+        const socket = io();
+
+        // Update MQTT status in real-time
+        socket.on('mqttStatus', (status) => {
+            // Update sidebar status
+            const mqttStatus = document.getElementById('mqttStatus');
+            
+            // Update center status cards
+            const mqttCardDot = document.querySelector('.status-card:nth-child(2) .status-dot');
+            const mqttCardText = document.querySelector('.status-card:nth-child(2) .status-indicator span');
+            
+            if (status === 'Connected') {
+                // Sidebar
+                mqttStatus.className = 'status-value connected';
+                mqttStatus.textContent = 'Connected';
+                
+                // Center cards
+                if (mqttCardDot) mqttCardDot.className = 'status-dot connected';
+                if (mqttCardText) mqttCardText.textContent = 'Connected';
+            } else {
+                // Sidebar
+                mqttStatus.className = 'status-value disconnected';
+                mqttStatus.textContent = 'Disconnected';
+                
+                // Center cards
+                if (mqttCardDot) mqttCardDot.className = 'status-dot disconnected';
+                if (mqttCardText) mqttCardText.textContent = 'Disconnected';
+            }
+        });
+
+        // Update backend status
+        socket.on('backendStatus', (status) => {
+            const backendStatus = document.getElementById('backendStatus');
+            const backendDot = document.querySelector('.status-card:first-child .status-dot');
+            
+            if (status) {
+                backendStatus.className = 'status-value connected';
+                backendStatus.textContent = 'Connected';
+                backendDot.className = 'status-dot connected';
+            } else {
+                backendStatus.className = 'status-value disconnected';
+                backendStatus.textContent = 'Disconnected';
+                backendDot.className = 'status-dot disconnected';
+            }
+        });
+
+        // Mobile menu toggle
+        const menuToggle = document.getElementById('menuToggle');
+        const nav = document.querySelector('.app-nav');
+
+        // guard: menuToggle may be missing in some layouts
+        if (menuToggle && nav) {
+            menuToggle.onclick = () => {
+                nav.classList.toggle('open');
+            };
+        }
+
+        // Check MQTT Manager status on page load
+        async function checkMQTTStatus() {
+            try {
+                const response = await fetch('http://localhost:2052/api/mqtt/manager/status');
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    const mqttStatus = document.getElementById('mqttStatus');
+                    const mqttCardDot = document.querySelector('.status-card:nth-child(2) .status-dot');
+                    const mqttCardText = document.querySelector('.status-card:nth-child(2) .status-indicator span');
+                    
+                    const connectedBrokers = result.data.filter(b => b.connected).length;
+                    const totalBrokers = result.data.length;
+                    
+                    if (connectedBrokers > 0) {
+                        mqttStatus.className = 'status-value connected';
+                        mqttStatus.textContent = `${connectedBrokers}/${totalBrokers} Brokers`;
+                        if (mqttCardDot) mqttCardDot.className = 'status-dot connected';
+                        if (mqttCardText) mqttCardText.textContent = `${connectedBrokers}/${totalBrokers} Brokers Connected`;
+                    } else {
+                        mqttStatus.className = 'status-value disconnected';
+                        mqttStatus.textContent = 'No Brokers';
+                        if (mqttCardDot) mqttCardDot.className = 'status-dot disconnected';
+                        if (mqttCardText) mqttCardText.textContent = 'No Brokers Connected';
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to check MQTT status:', error);
+            }
+        }
+
+        // Check status on load
+        checkMQTTStatus();
+        
+        // Refresh status every 5 seconds
+        setInterval(checkMQTTStatus, 5000);
+
+        function showBrokersPage() {
+            document.getElementById('homeContent').style.display = 'none';
+            document.querySelector('.dashboard-cards').style.display = 'none';
+            document.querySelector('.status-section').style.display = 'none';
+            document.getElementById('brokersPage').style.display = 'block';
+            loadBrokers();
+        }
+
+        function showHomePage() {
+            document.getElementById('homeContent').style.display = '';
+            document.querySelector('.dashboard-cards').style.display = '';
+            document.querySelector('.status-section').style.display = '';
+            document.getElementById('brokersPage').style.display = 'none';
+        }
+
+        // Paste all JS from manage-brokers.ejs here (loadBrokers, openAddModal, editBroker, deleteBroker, closeModal, showAlert, modal click, brokerForm submit)
+    </script>
+</body>
+</html>

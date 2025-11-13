@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #e8e8e8;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #333;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            color: #ffffff;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+        }
+
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #da190b;
+        }
+
+        .btn-secondary {
+            background: #666;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #555;
+        }
+
+        .brokers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .broker-card {
+            background: #242424;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .broker-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .broker-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .broker-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #64b5f6;
+        }
+
+        .broker-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .broker-actions .btn {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        .broker-info {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #999;
+            min-width: 80px;
+        }
+
+        .info-value {
+            color: #e8e8e8;
+        }
+
+        .device-count {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #333;
+            color: #81c784;
+            font-weight: 600;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #242424;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-header h2 {
+            color: #ffffff;
+            font-size: 1.5rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            background: #333;
+            color: #fff;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #e8e8e8;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #1a1a1a;
+            color: #e8e8e8;
+            font-size: 0.95rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #2196F3;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+
+        .alert {
+            padding: 12px 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: #2d5016;
+            border: 1px solid #4caf50;
+            color: #81c784;
+        }
+
+        .alert-error {
+            background: #5a1a1a;
+            border: 1px solid #f44336;
+            color: #ef5350;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state .material-icons {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><span class="material-icons" style="vertical-align: middle; margin-right: 10px;">dns</span>MQTT Brokers</h1>
+            <button class="btn btn-primary" onclick="openAddModal()">
+                <span class="material-icons">add</span>
+                เพิ่ม Broker
+            </button>
+        </div>
+
+        <div id="alert" class="alert"></div>
+
+        <div id="brokers-container" class="brokers-grid">
+            <!-- Brokers will be loaded here -->
+        </div>
+
+        <div class="empty-state" id="empty-state" style="display: none;">
+            <span class="material-icons">dns</span>
+            <p>ยังไม่มี MQTT Broker</p>
+            <p style="margin-top: 10px;">คลิกปุ่ม "เพิ่ม Broker" เพื่อเริ่มต้น</p>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="brokerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">เพิ่ม Broker</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="brokerForm">
+                <input type="hidden" id="brokerId" name="id">
+                
+                <div class="form-group">
+                    <label for="name">ชื่อ Broker *</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="protocol">Protocol *</label>
+                    <select id="protocol" name="protocol" required>
+                        <option value="mqtt">MQTT</option>
+                        <option value="mqtts">MQTTS (SSL/TLS)</option>
+                        <option value="ws">WebSocket</option>
+                        <option value="wss">WebSocket Secure</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="broker">Broker Address *</label>
+                    <input type="text" id="broker" name="broker" placeholder="localhost หรือ mqtt.example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="port">Port *</label>
+                    <input type="number" id="port" name="port" placeholder="1883" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="username">Username (ถ้ามี)</label>
+                    <input type="text" id="username" name="username">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password (ถ้ามี)</label>
+                    <input type="password" id="password" name="password">
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">ยกเลิก</button>
+                    <button type="submit" class="btn btn-success">
+                        <span class="material-icons">save</span>
+                        บันทึก
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:2052/api/brokers';
+
+        // Load brokers on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadBrokers();
+        });
+
+        async function loadBrokers() {
+            try {
+                const response = await fetch(API_URL);
+                const brokers = await response.json();
+                
+                const container = document.getElementById('brokers-container');
+                const emptyState = document.getElementById('empty-state');
+                
+                if (brokers.length === 0) {
+                    container.style.display = 'none';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+                
+                container.style.display = 'grid';
+                emptyState.style.display = 'none';
+                
+                container.innerHTML = brokers.map(broker => `
+                    <div class="broker-card">
+                        <div class="broker-header">
+                            <div class="broker-name">${broker.name}</div>
+                            <div class="broker-actions">
+                                <button class="btn btn-primary" onclick="editBroker(${broker.id})">
+                                    <span class="material-icons">edit</span>
+                                </button>
+                                <button class="btn btn-danger" onclick="deleteBroker(${broker.id}, '${broker.name}', ${broker.devices.length})">
+                                    <span class="material-icons">delete</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="broker-info">
+                            <div class="info-row">
+                                <span class="info-label">Protocol:</span>
+                                <span class="info-value">${broker.protocol.toUpperCase()}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Address:</span>
+                                <span class="info-value">${broker.broker}:${broker.port}</span>
+                            </div>
+                            ${broker.username ? `
+                            <div class="info-row">
+                                <span class="info-label">Username:</span>
+                                <span class="info-value">${broker.username}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div class="device-count">
+                            <span class="material-icons" style="vertical-align: middle; margin-right: 5px;">devices</span>
+                            ${broker.devices.length} device(s)
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading brokers:', error);
+                showAlert('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
+            }
+        }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'เพิ่ม Broker';
+            document.getElementById('brokerForm').reset();
+            document.getElementById('brokerId').value = '';
+            document.getElementById('brokerModal').classList.add('active');
+        }
+
+        async function editBroker(id) {
+            try {
+                const response = await fetch(`${API_URL}/${id}`);
+                const broker = await response.json();
+                
+                document.getElementById('modalTitle').textContent = 'แก้ไข Broker';
+                document.getElementById('brokerId').value = broker.id;
+                document.getElementById('name').value = broker.name;
+                document.getElementById('protocol').value = broker.protocol;
+                document.getElementById('broker').value = broker.broker;
+                document.getElementById('port').value = broker.port;
+                document.getElementById('username').value = broker.username || '';
+                document.getElementById('password').value = broker.password || '';
+                
+                document.getElementById('brokerModal').classList.add('active');
+            } catch (error) {
+                console.error('Error loading broker:', error);
+                showAlert('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
+            }
+        }
+
+        async function deleteBroker(id, name, deviceCount) {
+            if (deviceCount > 0) {
+                showAlert(`ไม่สามารถลบได้ เนื่องจากมี ${deviceCount} device(s) ใช้งาน broker นี้อยู่`, 'error');
+                return;
+            }
+            
+            if (!confirm(`คุณต้องการลบ broker "${name}" ใช่หรือไม่?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showAlert('ลบ broker สำเร็จ', 'success');
+                    loadBrokers();
+                } else {
+                    const error = await response.json();
+                    showAlert(error.error || 'เกิดข้อผิดพลาดในการลบ', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting broker:', error);
+                showAlert('เกิดข้อผิดพลาดในการลบ', 'error');
+            }
+        }
+
+        document.getElementById('brokerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            const brokerId = data.id;
+            delete data.id;
+            
+            try {
+                const url = brokerId ? `${API_URL}/${brokerId}` : API_URL;
+                const method = brokerId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    showAlert(brokerId ? 'อัพเดท broker สำเร็จ' : 'เพิ่ม broker สำเร็จ', 'success');
+                    closeModal();
+                    loadBrokers();
+                } else {
+                    const error = await response.json();
+                    showAlert(error.error || 'เกิดข้อผิดพลาด', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving broker:', error);
+                showAlert('เกิดข้อผิดพลาดในการบันทึก', 'error');
+            }
+        });
+
+        function closeModal() {
+            document.getElementById('brokerModal').classList.remove('active');
+        }
+
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type} show`;
+            
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 5000);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('brokerModal').addEventListener('click', (e) => {
+            if (e.target.id === 'brokerModal') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

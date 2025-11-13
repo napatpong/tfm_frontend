@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Live Monitor - Card View</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e8e8e8;
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .monitor-container {
+            max-width: 1920px;
+            margin: 0 auto;
+            padding: 15px 30px;
+        }
+
+        @media (max-width: 1400px) {
+            .monitor-container {
+                padding: 15px 25px;
+            }
+        }
+
+        @media (max-width: 1000px) {
+            .monitor-container {
+                padding: 12px 18px;
+            }
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            background: rgba(255,255,255,0.05);
+            padding: 20px 30px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-section h1 {
+            margin: 0;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 2rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            background: rgba(0,0,0,0.3);
+            padding: 5px;
+            border-radius: 8px;
+        }
+
+        .view-btn {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            color: #aaa;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .view-btn.active {
+            background: #1976d2;
+            color: white;
+        }
+
+        .view-btn:hover:not(.active) {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 1600px) {
+            .cards-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 16px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .cards-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 15px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 14px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .cards-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+        }
+
+        .device-card {
+            background: linear-gradient(145deg, rgba(30,30,50,0.9), rgba(20,20,35,0.95));
+            border-radius: 12px;
+            padding: 0;
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(255,255,255,0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            min-height: 150px;
+        }
+
+        .device-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #1976d2, #42a5f5);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .device-card::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300%;
+            height: 300%;
+            background: radial-gradient(circle, rgba(25,118,210,0.1) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .device-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 50px rgba(25,118,210,0.3);
+            border-color: rgba(25,118,210,0.5);
+        }
+
+        .device-card:hover::before {
+            opacity: 1;
+        }
+
+        .device-card:hover::after {
+            opacity: 1;
+        }
+
+        .device-card.online {
+            border-color: rgba(76, 175, 80, 0.4);
+            box-shadow: 0 8px 32px rgba(76, 175, 80, 0.15);
+        }
+
+        .device-card.online::before {
+            background: linear-gradient(90deg, #4caf50, #81c784);
+            opacity: 1;
+        }
+
+        .device-card.offline {
+            border-color: rgba(244, 67, 54, 0.3);
+            opacity: 0.6;
+            filter: grayscale(0.3);
+        }
+
+        .device-card.offline::before {
+            background: linear-gradient(90deg, #f44336, #ef5350);
+            opacity: 0.7;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: rgba(0,0,0,0.2);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+            z-index: 1;
+            flex-shrink: 0;
+        }
+
+        .device-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #ffffff;
+            margin: 0;
+            line-height: 1.2;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .device-name::before {
+            content: '▣';
+            color: #1976d2;
+            font-size: 1.05rem;
+            flex-shrink: 0;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 0 12px currentColor;
+            position: relative;
+        }
+
+        .status-indicator::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 50%;
+            border: 1.5px solid currentColor;
+            opacity: 0.3;
+        }
+
+        .status-indicator.online {
+            background: #4caf50;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        .status-indicator.offline {
+            background: #f44336;
+            box-shadow: 0 0 8px #f44336;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { 
+                opacity: 1;
+                box-shadow: 0 0 15px currentColor;
+            }
+            50% { 
+                opacity: 0.6;
+                box-shadow: 0 0 25px currentColor;
+            }
+        }
+
+        .card-body {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 5px;
+            padding: 8px 8px;
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .data-row {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 6px 5px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.02);
+            transition: all 0.3s ease;
+            position: relative;
+            text-align: center;
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        .data-row:hover {
+            background: rgba(255,255,255,0.05);
+            transform: translateY(-2px);
+        }
+
+        .data-row:hover {
+            background: rgba(255,255,255,0.05);
+            transform: translateX(3px);
+        }
+
+        .data-row::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 60%;
+            background: currentColor;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .data-row::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 3px;
+            background: currentColor;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .data-row:hover::before {
+            opacity: 1;
+        }
+
+        .data-label {
+            font-size: 0.65rem;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        .data-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 0 2px 10px currentColor;
+            font-family: 'Roboto Mono', monospace;
+            letter-spacing: -0.5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        .data-row.room-temp {
+            color: #ff6b6b;
+        }
+
+        .data-row.coil-temp {
+            color: #4ecdc4;
+        }
+
+        .data-row.setpoint {
+            color: #ffd93d;
+        }
+
+        .data-value.temp {
+            color: #ff6b6b;
+        }
+
+        .data-value.coil {
+            color: #4ecdc4;
+        }
+
+        .data-value.setpoint-val {
+            color: #ffd93d;
+        }
+
+        .card-footer {
+            padding: 5px 12px;
+            background: rgba(0,0,0,0.2);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.65rem;
+            color: #888;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            position: relative;
+            z-index: 1;
+            flex-shrink: 0;
+            margin-top: auto;
+        }
+
+        .card-footer .material-icons {
+            font-size: 0.85rem;
+            opacity: 0.6;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .no-data .material-icons {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #aaa;
+        }
+
+        .loading .spinner {
+            border: 4px solid rgba(25,118,210,0.2);
+            border-top: 4px solid #1976d2;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            margin: 0 auto;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Temperature indicators with background glow */
+        .data-row.room-temp {
+            background: linear-gradient(145deg, rgba(255,107,107,0.08), rgba(255,107,107,0.02));
+            border: 1px solid rgba(255,107,107,0.25);
+        }
+
+        .data-row.room-temp .data-value {
+            background: linear-gradient(135deg, rgba(255,107,107,0.15), rgba(255,107,107,0.08));
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,107,107,0.3);
+            max-width: calc(100% - 4px);
+        }
+
+        .data-row.coil-temp {
+            background: linear-gradient(145deg, rgba(78,205,196,0.08), rgba(78,205,196,0.02));
+            border: 1px solid rgba(78,205,196,0.25);
+        }
+
+        .data-row.coil-temp .data-value {
+            background: linear-gradient(135deg, rgba(78,205,196,0.15), rgba(78,205,196,0.08));
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(78,205,196,0.3);
+            max-width: calc(100% - 4px);
+        }
+
+        .data-row.setpoint {
+            background: linear-gradient(145deg, rgba(255,217,61,0.08), rgba(255,217,61,0.02));
+            border: 1px solid rgba(255,217,61,0.25);
+        }
+
+        .data-row.setpoint .data-value {
+            background: linear-gradient(135deg, rgba(255,217,61,0.15), rgba(255,217,61,0.08));
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,217,61,0.3);
+            max-width: calc(100% - 4px);
+        }
+
+        /* Fade in animation for cards */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .device-card {
+            animation: fadeInUp 0.5s ease-out backwards;
+        }
+
+        .device-card:nth-child(1) { animation-delay: 0.05s; }
+        .device-card:nth-child(2) { animation-delay: 0.1s; }
+        .device-card:nth-child(3) { animation-delay: 0.15s; }
+        .device-card:nth-child(4) { animation-delay: 0.2s; }
+        .device-card:nth-child(5) { animation-delay: 0.25s; }
+        .device-card:nth-child(6) { animation-delay: 0.3s; }
+        .device-card:nth-child(7) { animation-delay: 0.35s; }
+        .device-card:nth-child(8) { animation-delay: 0.4s; }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateX(-5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="monitor-container">
+        <div class="header-section">
+            <h1>
+                <span class="material-icons" style="vertical-align: middle; font-size: 2rem;">dashboard</span>
+                Live Monitor - Card View
+            </h1>
+            <div class="header-actions">
+                <div class="view-toggle">
+                    <a href="/live-monitor" class="view-btn">
+                        <span class="material-icons" style="font-size: 18px;">view_list</span>
+                        Table
+                    </a>
+                    <button class="view-btn active">
+                        <span class="material-icons" style="font-size: 18px;">dashboard</span>
+                        Tiles
+                    </button>
+                    <a href="/devices-monitor" class="view-btn">
+                        <span class="material-icons" style="font-size: 18px;">grid_view</span>
+                        Cards
+                    </a>
+                </div>
+                <a href="/" class="back-btn">
+                    <span class="material-icons" style="font-size: 18px;">arrow_back</span>
+                    Back
+                </a>
+            </div>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading devices...</p>
+        </div>
+
+        <div id="cardsContainer" class="cards-grid" style="display: none;"></div>
+
+        <div id="noData" class="no-data" style="display: none;">
+            <span class="material-icons">devices_off</span>
+            <h3>No devices found</h3>
+            <p>Add devices to start monitoring</p>
+        </div>
+    </div>
+
+    <script>
+        const devices = <%- JSON.stringify(devices) %>;
+        let ws;
+        const deviceData = new Map();
+
+        // Initialize device data
+        devices.forEach(device => {
+            deviceData.set(device.id, {
+                ...device,
+                status: 'offline',
+                lastUpdate: null,
+                roomTemp: '-',
+                coilTemp: '-',
+                setpoint: '-',
+                online: '-',
+                rawData: {} // Store accumulated hex values by parameter index
+            });
+        });
+
+        // Connect to backend WebSocket
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:2052');
+
+            ws.onopen = () => {
+                // mqttManager auto-subscribes to all device topics
+                renderCards();
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.type === 'mqtt_message' && data.data) {
+                        handleMqttMessage(data.data);
+                    }
+                } catch (error) {
+                    console.error('Error parsing WebSocket message:', error);
+                }
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket disconnected. Reconnecting...');
+                setTimeout(connectWebSocket, 3000);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        // Convert hex to signed 16-bit integer (same as live-monitor table)
+        function hexToSigned16(hexString) {
+            if (!hexString || hexString === '-') return '-';
+            try {
+                const cleanHex = hexString.replace(/^0x/i, '').slice(-4);
+                let value = parseInt(cleanHex, 16);
+                if (isNaN(value)) return '-';
+                if (value & 0x8000) value = value - 0x10000;
+                return value;
+            } catch (error) {
+                return '-';
+            }
+        }
+
+        // Calculate scaled value (same as live-monitor table)
+        function calculateScaledValue(signedValue, scale) {
+            if (signedValue === '-' || signedValue === null || signedValue === undefined) return '-';
+            if (scale === 10) return (signedValue / 10).toFixed(1);
+            return signedValue;
+        }
+
+        // Parse MQTT message format (MAC:DATA:start:end:values...) - same as live-monitor table
+        function parseMessage(message) {
+            try {
+                if (!message) return null;
+                
+                const macMatch = message.match(/^([0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}):/i);
+                if (!macMatch) return null;
+                
+                const mac = macMatch[1];
+                const remainingMessage = message.substring(mac.length + 1);
+                const parts = remainingMessage.split(':');
+                
+                if (parts.length >= 1) {
+                    const dataType = parts[0];
+                    
+                    // กรณี DATA:start:end:value1:value2:...
+                    if (dataType === 'DATA' && parts.length >= 3) {
+                        const dataStart = parseInt(parts[1]);
+                        const dataEnd = parseInt(parts[2]);
+                        const dataCount = dataEnd - dataStart + 1;
+                        const dataValues = parts.slice(3, 3 + dataCount);
+                        
+                        return {
+                            mac: mac,
+                            type: 'DATA',
+                            range: `${dataStart}-${dataEnd}`,
+                            data: dataValues.map((value, index) => ({
+                                label: `data${dataStart + index}`,
+                                value: value
+                            }))
+                        };
+                    }
+                }
+            } catch (error) {
+                console.error('Parse error:', error);
+            }
+            return null;
+        }
+
+        // Handle incoming MQTT messages (same as live-monitor table)
+        function handleMqttMessage(mqttData) {
+            const { topic, message } = mqttData;
+            
+            // Extract MAC from topic
+            let macAddress = null;
+            if (topic.startsWith('bifrost_pub_')) {
+                macAddress = topic.replace('bifrost_pub_', '');
+            } else {
+                return;
+            }
+            
+            // Find device by MAC address
+            const device = devices.find(d => d.macAddress === macAddress);
+            if (!device) return;
+
+            // Parse message string (ไม่ใช่ JSON.parse)
+            const parsedMessage = parseMessage(message);
+            
+            if (!parsedMessage || parsedMessage.type !== 'DATA') {
+                return;
+            }
+            
+            const deviceInfo = deviceData.get(device.id);
+            
+            if (deviceInfo) {
+                deviceInfo.status = 'online';
+                deviceInfo.lastUpdate = new Date();
+                
+                // แปลง parsedMessage.data array และรวมกับ rawData เดิม (same as live-monitor table)
+                parsedMessage.data.forEach(item => {
+                    const idx = parseInt(item.label.replace('data', ''));
+                    deviceInfo.rawData[idx] = item.value;
+                });
+                
+                // ใช้ rawData ที่รวมแล้ว
+                const messageData = deviceInfo.rawData;
+                
+                // Parse hex values (same as live-monitor table)
+                const parseHexValue = (hexValue, scale = 10) => {
+                    const signedValue = hexToSigned16(hexValue);
+                    const scaledValue = calculateScaledValue(signedValue, scale);
+                    return scaledValue !== '-' ? scaledValue : '-';
+                };
+                
+                // Parameter 0: Room Temp
+                const hexValue0 = messageData[0];
+                if (hexValue0) {
+                    const value = parseHexValue(hexValue0, 10);
+                    deviceInfo.roomTemp = value !== '-' ? `${value}` : '-';
+                }
+                
+                // Parameter 1: Coil Temp
+                const hexValue1 = messageData[1];
+                if (hexValue1) {
+                    const value = parseHexValue(hexValue1, 10);
+                    deviceInfo.coilTemp = value !== '-' ? `${value}` : '-';
+                }
+                
+                // Parameter 60: Setpoint
+                const hexValue60 = messageData[60];
+                if (hexValue60) {
+                    const value = parseHexValue(hexValue60, 10);
+                    deviceInfo.setpoint = value !== '-' ? `${value}` : '-';
+                }
+                
+                deviceInfo.online = calculateOnlineTime(deviceInfo.lastUpdate);
+                
+                deviceData.set(device.id, deviceInfo);
+                updateCard(device.id);
+            }
+        }
+
+        // Calculate online time
+        function calculateOnlineTime(lastUpdate) {
+            if (!lastUpdate) return '-';
+            
+            const now = new Date();
+            const diff = now - lastUpdate;
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (days > 0) return `${days}d ${hours % 24}h`;
+            if (hours > 0) return `${hours}h ${minutes % 60}m`;
+            if (minutes > 0) return `${minutes}m`;
+            return `${seconds}s`;
+        }
+
+        // Render all cards
+        function renderCards() {
+            const container = document.getElementById('cardsContainer');
+            const loading = document.getElementById('loading');
+            const noData = document.getElementById('noData');
+            
+            if (devices.length === 0) {
+                loading.style.display = 'none';
+                noData.style.display = 'block';
+                return;
+            }
+
+            loading.style.display = 'none';
+            container.style.display = 'grid';
+            container.innerHTML = '';
+
+            // Natural sort by device name
+            const sortedDevices = [...devices].sort((a, b) => {
+                return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+            });
+
+            sortedDevices.forEach(device => {
+                const deviceInfo = deviceData.get(device.id);
+                const card = createCard(device, deviceInfo);
+                container.appendChild(card);
+            });
+        }
+
+        // Create a single card
+        function createCard(device, deviceInfo) {
+            const card = document.createElement('div');
+            card.className = `device-card ${deviceInfo.status}`;
+            card.id = `card-${device.id}`;
+
+            card.innerHTML = `
+                <div class="card-header">
+                    <h3 class="device-name">${device.name}</h3>
+                    <div class="status-indicator ${deviceInfo.status}"></div>
+                </div>
+                <div class="card-body">
+                    <div class="data-row room-temp">
+                        <span class="data-label">Room Temp</span>
+                        <span class="data-value temp" id="roomTemp-${device.id}">${deviceInfo.roomTemp}°C</span>
+                    </div>
+                    <div class="data-row coil-temp">
+                        <span class="data-label">Coil Temp</span>
+                        <span class="data-value coil" id="coilTemp-${device.id}">${deviceInfo.coilTemp}°C</span>
+                    </div>
+                    <div class="data-row setpoint">
+                        <span class="data-label">Setpoint</span>
+                        <span class="data-value setpoint-val" id="setpoint-${device.id}">${deviceInfo.setpoint}°C</span>
+                    </div>
+                </div>
+                <div class="card-footer" id="footer-${device.id}">
+                    <span class="material-icons">schedule</span>
+                    ${deviceInfo.status === 'online' ? 'Online: ' + deviceInfo.online : 'Offline'}
+                </div>
+            `;
+
+            return card;
+        }
+
+        // Update a specific card
+        function updateCard(deviceId) {
+            const deviceInfo = deviceData.get(deviceId);
+            const card = document.getElementById(`card-${deviceId}`);
+            
+            if (!card || !deviceInfo) return;
+
+            // Update card class
+            card.className = `device-card ${deviceInfo.status}`;
+
+            // Update status indicator
+            const indicator = card.querySelector('.status-indicator');
+            indicator.className = `status-indicator ${deviceInfo.status}`;
+
+            // Update values
+            const roomTempEl = document.getElementById(`roomTemp-${deviceId}`);
+            const coilTempEl = document.getElementById(`coilTemp-${deviceId}`);
+            const setpointEl = document.getElementById(`setpoint-${deviceId}`);
+            const footerEl = document.getElementById(`footer-${deviceId}`);
+
+            if (roomTempEl) roomTempEl.textContent = deviceInfo.roomTemp !== '-' ? `${deviceInfo.roomTemp}°C` : '-';
+            if (coilTempEl) coilTempEl.textContent = deviceInfo.coilTemp !== '-' ? `${deviceInfo.coilTemp}°C` : '-';
+            if (setpointEl) setpointEl.textContent = deviceInfo.setpoint !== '-' ? `${deviceInfo.setpoint}°C` : '-';
+            if (footerEl) footerEl.textContent = deviceInfo.status === 'online' ? `Online: ${deviceInfo.online}` : 'Offline';
+        }
+
+        // Update online times every second
+        setInterval(() => {
+            deviceData.forEach((deviceInfo, deviceId) => {
+                if (deviceInfo.status === 'online' && deviceInfo.lastUpdate) {
+                    deviceInfo.online = calculateOnlineTime(deviceInfo.lastUpdate);
+                    const footerEl = document.getElementById(`footer-${deviceId}`);
+                    if (footerEl) {
+                        footerEl.textContent = `Online: ${deviceInfo.online}`;
+                    }
+                }
+            });
+        }, 1000);
+
+        // Initialize
+        connectWebSocket();
+    </script>
+</body>
+</html>
